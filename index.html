@@ -1,24 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/x-icon" href="public/favicon.ico">
-    <title>TodoMVC: mini-framework</title>
-    <link rel="stylesheet" href="styles/globals.css" />
-    <script type="importmap">
-    {
-        "imports": {
-            "mini-framework/": "/node_modules/@thakkou/mini-framework/"
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon" type="image/x-icon" href="public/favicon.ico">
+        <title>BombermanDOM: mini-framework</title>
+        <link rel="stylesheet" href="styles/globals.css" />
+        <script type="importmap">
+        {
+            "imports": {
+                "mini-framework/": "/node_modules/@thakkou/mini-framework/"
+            }
         }
-    }
-    </script>
-    <script type="module" src="src/main.js" defer></script>
-</head>
-<body class="learn-bar">
-    <aside class="learn">
-        <header><h3>mini-framework</h3></header>
-    </aside>
-    <section class="todoapp" id="root"></section>
-</body>
+        </script>
+        <script type="module" src="src/main.js" defer></script>
+    </head>
+    <body class="learn-bar">
+        <section class="domberman-dom" id="root">
+            <div class="title-block">
+                <h1>bomberman-dom</h1>
+                <div class="subtitle">a bomberman-style demolition</div>
+            </div>
+            
+            <div class="layout">
+                <div class="stage">
+                <canvas id="game"></canvas>
+                <div id="overlay" class="overlay hidden">
+                    <h3 id="overlayTitle">PAUSED</h3>
+                    <p id="overlayText">Take a breath.</p>
+                    <button id="overlayBtn">RESUME</button>
+                </div>
+                <div class="toast" id="toast">BOMB PLACED</div>
+                </div>
+            
+                <div class="hud">
+                <div>
+                    <h2>Status</h2>
+                    <div class="stat-row"><span>Level</span><span id="statLevel">1</span></div>
+                    <div class="stat-row"><span>Score</span><span id="statScore">0</span></div>
+                    <div class="stat-row"><span>Enemies</span><span id="statEnemies">0</span></div>
+                    <div class="stat-row"><span>Bombs</span><span id="statBombs">1</span></div>
+                    <div class="stat-row"><span>Blast Range</span><span id="statRange">1</span></div>
+                </div>
+                <div>
+                    <h2>Lives</h2>
+                    <div class="lives-hearts" id="livesRow"></div>
+                </div>
+                <div>
+                    <h2>Controls</h2>
+                    <div class="keys">
+                    Move: <kbd>&uarr;</kbd><kbd>&darr;</kbd><kbd>&larr;</kbd><kbd>&rarr;</kbd> or <b>WASD</b><br>
+                    Drop bomb: <kbd>Space</kbd><br>
+                    Pause: <kbd>P</kbd>
+                    </div>
+                </div>
+                <button id="restartBtn" class="secondary">Restart Level</button>
+                </div>
+            </div>
+            
+            <div class="footer-note">
+                Blow up soft crates to reveal power-ups. Clear every enemy to open the exit. Don't stand next to your own bomb.
+            </div>
+        </section>
+    </body>
 </html>
