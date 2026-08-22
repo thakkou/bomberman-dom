@@ -90,7 +90,22 @@
         </div>
       </div>
       <div class="messages-container">
-        <p id="game-message">Move with Arrow keys or WASD. Drop a bomb with Space.</p>
+        <div class="chat-header">
+          <h2>Game Chat</h2>
+          <p id="game-message">Move with Arrow keys or WASD. Drop a bomb with Space.</p>
+        </div>
+        <div class="chat-messages" id="chat-messages" aria-live="polite">
+          <p class="chat-empty" id="chat-empty">No messages yet.</p>
+        </div>
+        <form class="chat-form" id="chat-form">
+          <label for="chat-name">Name</label>
+          <input id="chat-name" maxlength="20" placeholder="Player" autocomplete="nickname" />
+          <label for="chat-input">Message</label>
+          <div class="chat-send-row">
+            <input id="chat-input" maxlength="160" placeholder="Write a message..." autocomplete="off" />
+            <button type="submit">Send</button>
+          </div>
+        </form>
       </div>
     </div>
     <script type="text/plain" id="old-game-prototype">
