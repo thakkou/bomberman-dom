@@ -98,7 +98,7 @@ function movePlayerUp() { movePlayer(-BOARD_COLUMNS); }
 function movePlayerDown() { movePlayer(BOARD_COLUMNS); }
 
 function generateBomb() {
-  if (game.isGameOver || game.bombs.has(game.playerPosition)) return false;
+  if (game.isGameOver || game.bombs.size > 0) return false;
   const position = game.playerPosition;
   const timer = window.setTimeout(() => explodeBomb(position), BOMB_DELAY);
   game.bombs.set(position, timer);
