@@ -1,14 +1,24 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Bomberman</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="icon" type="image/x-icon" href="public/favicon.ico">
+    <title>BombermanDOM: mini-framework</title>
     <link rel="stylesheet" href="./styles/base.css" />
     <link rel="stylesheet" href="./styles/layout.css" />
     <link rel="stylesheet" href="./styles/components/hud.css" />
     <link rel="stylesheet" href="./styles/components/game.css" />
     <link rel="stylesheet" href="./styles/components/chat.css" />
+    <script type="importmap">
+    {
+        "imports": {
+            "mini-framework/": "/node_modules/@thakkou/mini-framework/"
+        }
+    }
+    </script>
+    <script type="module" src="scripts/game.js" defer></script>
+    <script type="module" src="scripts/chat.js" defer></script>
   </head>
   <body>
     <main id="root">
@@ -59,8 +69,5 @@
         </form>
       </aside>
     </main>
-
-    <script src="./scripts/game.js"></script>
-    <script src="./scripts/chat.js"></script>
   </body>
 </html>

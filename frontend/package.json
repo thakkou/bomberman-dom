@@ -1,0 +1,9 @@
+{
+    "name": "frontend",
+    "type": "module",
+    "version": "0.0.1",
+    "description": "made with mini-framework",
+    "dependencies": {
+        "@thakkou/mini-framework": "^0.0.1"
+    }
+}
