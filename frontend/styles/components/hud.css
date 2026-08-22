@@ -1,0 +1,62 @@
+.lives-and-score-container {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 30px;
+  color: #f8fafc;
+}
+
+.game-title {
+  color: #f8fafc;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.game-stats {
+  display: flex;
+  gap: 14px;
+}
+
+.stat-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 135px;
+  padding: 10px 16px;
+  border: 1px solid #475569;
+  background-color: #0f172a;
+}
+
+.stat-icon {
+  font-size: 25px;
+}
+
+.stat-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-label {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.stat-value {
+  font-size: 23px;
+  font-weight: 800;
+}
+
+.lives-card .stat-icon,
+#lives {
+  color: #fb7185;
+}
+
+.score-card .stat-icon,
+#score {
+  color: #facc15;
+}

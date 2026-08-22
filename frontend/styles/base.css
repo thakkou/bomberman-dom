@@ -1,0 +1,13 @@
+body {
+  color: #f8fafc;
+}
+
+#root {
+  background-color: #111827;
+}
+
+.main-container,
+.lives-and-score-container,
+.messages-container {
+  background-color: #1e293b;
+}

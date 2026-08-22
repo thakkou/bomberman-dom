@@ -216,28 +216,6 @@ document.addEventListener("keydown", (event) => {
   }
 });
 
-document.getElementById("chat-form").addEventListener("submit", (event) => {
-  event.preventDefault();
-  const nameInput = document.getElementById("chat-name");
-  const messageInput = document.getElementById("chat-input");
-  const name = nameInput.value.trim() || "Player";
-  const message = messageInput.value.trim();
-  if (!message) return;
-
-  document.getElementById("chat-empty")?.remove();
-  const messageElement = document.createElement("p");
-  messageElement.className = "chat-message";
-  const authorElement = document.createElement("strong");
-  authorElement.textContent = `${name}: `;
-  messageElement.append(authorElement, document.createTextNode(message));
-
-  const messages = document.getElementById("chat-messages");
-  messages.appendChild(messageElement);
-  messages.scrollTop = messages.scrollHeight;
-  messageInput.value = "";
-  messageInput.focus();
-});
-
 generateMapCubes();
 generateObstacles();
 playersInitState();
