@@ -1,0 +1,61 @@
+body {
+  color: #f8fafc;
+}
+
+#root {
+  background-color: #111827 !important;
+}
+
+.main-container,
+.lives-and-score-container,
+.messages-container {
+  background-color: #1e293b !important;
+}
+
+.lives-and-score-container {
+  color: #f8fafc;
+}
+
+#lives {
+  color: #fb7185;
+}
+
+#score {
+  color: #facc15;
+}
+
+.game-container,
+.border-line,
+.map-game {
+  background-color: #0f172a !important;
+}
+
+.cube,
+.cube.empty-space {
+  color: #ffffff;
+  background-color: #334155 !important;
+}
+
+.cube.cant-be-broken {
+  background-color: #0b1220 !important;
+}
+
+.cube.box {
+  background-color: #92400e !important;
+}
+
+.cube.player {
+  background-color: #2563eb !important;
+}
+
+.cube.bomb {
+  background-color: #475569 !important;
+}
+
+.cube.explosion {
+  background-color: #f97316 !important;
+}
+
+#game-message {
+  color: #cbd5e1;
+}
