@@ -48,7 +48,7 @@
       .border-line {
         width: 100%;
         height: 100%;
-        background-color: red;
+        background-color: red !important;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -81,7 +81,23 @@
     <div id="root">
       <div class="main-container">
         <div class="lives-and-score-container">
-          Lives: <span id="lives">3</span> | Score: <span id="score">0</span>
+          <div class="game-title">BOMBERMAN</div>
+          <div class="game-stats">
+            <div class="stat-card lives-card">
+              <span class="stat-icon" aria-hidden="true">♥</span>
+              <span class="stat-text">
+                <span class="stat-label">Lives</span>
+                <span class="stat-value" id="lives">3</span>
+              </span>
+            </div>
+            <div class="stat-card score-card">
+              <span class="stat-icon" aria-hidden="true">★</span>
+              <span class="stat-text">
+                <span class="stat-label">Score</span>
+                <span class="stat-value" id="score">0</span>
+              </span>
+            </div>
+          </div>
         </div>
         <div class="game-container">
           <div class="border-line">
