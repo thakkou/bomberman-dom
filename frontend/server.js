@@ -37,7 +37,7 @@ const server = http.createServer(async (req, res) => {
         } else if (req.url.startsWith("/styles/")) {
             let filepath = path.join(__dirname, req.url.slice(1));
             await serveFile(filepath, "text/css;");
-        } else if (req.url.startsWith("/scripts/")) {
+        } else if (req.url.startsWith("/scripts/") || req.url.startsWith("/components/") || req.url.startsWith("/node_modules/")) {
             let filepath = path.join(__dirname, req.url.slice(1));
             await serveFile(filepath, "text/javascript;");
         } else if (req.url.startsWith("/public/")) {

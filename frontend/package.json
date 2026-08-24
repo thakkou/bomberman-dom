@@ -4,6 +4,6 @@
     "version": "0.0.1",
     "description": "made with mini-framework",
     "dependencies": {
-        "@thakkou/mini-framework": "^0.0.1"
+        "@thakkou/mini-framework": "file:../../mini-framework"
     }
 }

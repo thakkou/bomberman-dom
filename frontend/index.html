@@ -10,6 +10,8 @@
     <link rel="stylesheet" href="./styles/components/hud.css" />
     <link rel="stylesheet" href="./styles/components/game.css" />
     <link rel="stylesheet" href="./styles/components/chat.css" />
+    <link rel="stylesheet" href="./styles/components/lobby.css" />
+    <link rel="stylesheet" href="./styles/components/waiting.css" />
     <script type="importmap">
     {
         "imports": {
@@ -17,57 +19,11 @@
         }
     }
     </script>
-    <script type="module" src="scripts/game.js" defer></script>
-    <script type="module" src="scripts/chat.js" defer></script>
+    <script type="module" src="scripts/main.js" defer></script>
+    <!-- <script type="module" src="scripts/game.js" defer></script>
+    <script type="module" src="scripts/chat.js" defer></script> -->
   </head>
   <body>
-    <main id="root">
-      <section class="main-container" aria-label="Bomberman game">
-        <header class="lives-and-score-container">
-          <div class="game-title">BOMBERMAN</div>
-          <div class="game-stats">
-            <div class="stat-card lives-card">
-              <span class="stat-icon" aria-hidden="true">♥</span>
-              <span class="stat-text">
-                <span class="stat-label">Lives</span>
-                <span class="stat-value" id="lives">3</span>
-              </span>
-            </div>
-            <div class="stat-card score-card">
-              <span class="stat-icon" aria-hidden="true">★</span>
-              <span class="stat-text">
-                <span class="stat-label">Score</span>
-                <span class="stat-value" id="score">0</span>
-              </span>
-            </div>
-          </div>
-        </header>
-
-        <div class="game-container">
-          <div class="border-line">
-            <div class="map-game" id="map-game"></div>
-          </div>
-        </div>
-      </section>
-
-      <aside class="messages-container" aria-label="Game chat">
-        <header class="chat-header">
-          <h2>Game Chat</h2>
-          <p id="game-message">Move with Arrow keys or WASD. Drop a bomb with Space.</p>
-        </header>
-        <div class="chat-messages" id="chat-messages" aria-live="polite">
-          <p class="chat-empty" id="chat-empty">No messages yet.</p>
-        </div>
-        <form class="chat-form" id="chat-form">
-          <label for="chat-name">Name</label>
-          <input id="chat-name" maxlength="20" placeholder="Player" autocomplete="nickname" />
-          <label for="chat-input">Message</label>
-          <div class="chat-send-row">
-            <input id="chat-input" maxlength="160" placeholder="Write a message..." autocomplete="off" />
-            <button type="submit">Send</button>
-          </div>
-        </form>
-      </aside>
-    </main>
+    <main id="root"></main>
   </body>
 </html>
