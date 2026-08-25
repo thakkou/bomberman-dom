@@ -1,0 +1,635 @@
+{
+	"info": {
+		"_postman_id": "e88e9a09-a03f-4176-b816-a5f729135801",
+		"name": "bomberman-dom",
+		"description": "Tests for the dependency-free Bomberman Node.js backend.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "56113783",
+		"_collection_link": "https://taha-hakkou42-7715154.postman.co/workspace/thakkou's-Team's-Workspace~77551078-69a4-4063-84a0-d89b931f472b/collection/56113783-e88e9a09-a03f-4176-b816-a5f729135801?action=share&source=collection_link&creator=56113783"
+	},
+	"item": [
+		{
+			"name": "Join",
+			"item": [
+				{
+					"name": "Join Player 1",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const d = pm.response.json();",
+									"pm.collectionVariables.set('player1Id', d.player.id);",
+									"pm.test('201 Created',() => pm.response.to.have.status(201));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nickname\": \"Player1\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/players",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Player 2",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const d = pm.response.json();",
+									"pm.collectionVariables.set('player2Id', d.player.id);",
+									"pm.test('201 Created',() => pm.response.to.have.status(201));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"packages": {},
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nickname\": \"Player2\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/players",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Player 3",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const d = pm.response.json();",
+									"pm.collectionVariables.set('player3Id', d.player.id);",
+									"pm.test('201 Created',() => pm.response.to.have.status(201));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nickname\": \"Player3\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/players",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Player 4",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const d = pm.response.json();",
+									"pm.collectionVariables.set('player4Id', d.player.id);",
+									"pm.test('201 Created',() => pm.response.to.have.status(201));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nickname\": \"Player4\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/players",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Join Player 5",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const d = pm.response.json();",
+									"pm.collectionVariables.set('player5Id', d.player.id);",
+									"pm.test('201 Created',() => pm.response.to.have.status(201));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						},
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									""
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nickname\": \"Player5\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/players",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Player",
+			"item": [
+				{
+					"name": "Get All Players",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/players",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Player",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/players/:uuid",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players",
+								":uuid"
+							],
+							"variable": [
+								{
+									"key": "uuid",
+									"value": "130f3d5f-c983-44d0-b657-e0a3f1e97d12"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Leave Player",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/players/:uuid",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players",
+								":uuid"
+							],
+							"variable": [
+								{
+									"key": "uuid",
+									"value": "130f3d5f-c983-44d0-b657-e0a3f1e97d12"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Room",
+			"item": [
+				{
+					"name": "Get Room",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/rooms/:uuid",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"rooms",
+								":uuid"
+							],
+							"variable": [
+								{
+									"key": "uuid",
+									"value": "79138501-5fa3-40a8-9587-01ebd11148f8"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Start Room",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/rooms/:uuid/start",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"rooms",
+								":uuid",
+								"start"
+							],
+							"variable": [
+								{
+									"key": "uuid",
+									"value": "79138501-5fa3-40a8-9587-01ebd11148f8"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Rooms (not implemented)",
+					"request": {
+						"method": "GET",
+						"header": []
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Validation",
+			"item": [
+				{
+					"name": "Duplicate Nickname (Player 1)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"const d = pm.response.json();",
+									"pm.collectionVariables.set('player1Id', d.player.id);",
+									"pm.test('201 Created',() => pm.response.to.have.status(201));"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nickname\": \"Player1\"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/players",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Empty Nickname",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nickname\": \"   \"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/players",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"players"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Unknown Endpoint",
+					"protocolProfileBehavior": {
+						"disableBodyPruning": true
+					},
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\"nickname\": \"   \"}"
+						},
+						"url": {
+							"raw": "http://localhost:8080/api/x",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"x"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Lobby & Players",
+			"item": [
+				{
+					"name": "Get Lobby (not room)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "http://localhost:8080/api/rooms/:uuid",
+							"protocol": "http",
+							"host": [
+								"localhost"
+							],
+							"port": "8080",
+							"path": [
+								"api",
+								"rooms",
+								":uuid"
+							],
+							"variable": [
+								{
+									"key": "uuid",
+									"value": "79138501-5fa3-40a8-9587-01ebd11148f8"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Health",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/api/health",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						"api",
+						"health"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Options",
+			"request": {
+				"method": "OPTIONS",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8080/",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8080",
+					"path": [
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080"
+		},
+		{
+			"key": "player1Id",
+			"value": ""
+		},
+		{
+			"key": "player2Id",
+			"value": ""
+		},
+		{
+			"key": "player3Id",
+			"value": ""
+		},
+		{
+			"key": "player4Id",
+			"value": ""
+		},
+		{
+			"key": "roomId",
+			"value": ""
+		},
+		{
+			"key": "player5Id",
+			"value": ""
+		}
+	]
+}
