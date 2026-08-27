@@ -3,6 +3,7 @@ import http from "node:http";
 import * as conf from "./config.js";
 import * as state from "./globals.js";
 import * as bman from "./functions.js";
+import { createWebSocketServer, broadcastToRoom, broadcastQueuePositions } from "./wsManager.js";
 
 const server = http.createServer(async (req, res) => {
     if (req.method === "OPTIONS") {
@@ -72,7 +73,9 @@ const server = http.createServer(async (req, res) => {
             state.waitingQueue.push(player.id);
 
             // Try to create rooms
-            bman.processQueue();
+            const createdRooms = bman.processQueue();
+            for (const room of createdRooms) broadcastToRoom(room);
+            broadcastQueuePositions(state.waitingQueue); // refresh positions for everyone still waiting
 
 
             // Determine player's current state
@@ -267,6 +270,8 @@ const server = http.createServer(async (req, res) => {
         bman.sendError(res, 500, "Internal server error.");
     }
 });
+
+createWebSocketServer(server);
 
 server.listen(conf.PORT, conf.HOST, () => {
     console.log(`BACKEND: http://${conf.HOST}:${conf.PORT}`);

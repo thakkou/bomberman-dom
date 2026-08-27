@@ -60,6 +60,7 @@ export function processQueue() {
     // Node.js cannot execute another request in the middle of this function.
     // This is what makes checking the queue + removing players
     // + creating rooms effectively atomic.
+    const createdRooms = [];
     while (state.waitingQueue.length >= PLAYERS_PER_ROOM) {
         const playerIds = state.waitingQueue.splice(0, PLAYERS_PER_ROOM);
         const room = createRoom(playerIds);
@@ -68,8 +69,10 @@ export function processQueue() {
         for (const playerId of playerIds) {
             state.playerRooms.set(playerId, room.id);
         }
+        createdRooms.push(room);
         console.log(`Created room ${room.id} with ${playerIds.length} players`);
     }
+    return createdRooms;
 }
 
 

@@ -1,4 +1,3 @@
-// A lobby in a video game is a virtual waiting room or pre-match menu where players gather before a match starts.
 import { createElement } from "mini-framework/src/vdom/index.js";
 
 export default function Lobby() {
@@ -10,7 +9,7 @@ export default function Lobby() {
         createElement("p", { class: "lobby-subtitle" }, {}, "Enter your nickname to join the game."),
         createElement(
             "form",
-            { class: "nickname-form", action: "/waiting", method: "GET" },
+            { class: "nickname-form", id: "nickname-form" }, // action/method removed, id added
             {},
             createElement("label", { for: "nickname" }, {}, "Nickname"),
             createElement(
@@ -23,12 +22,13 @@ export default function Lobby() {
                     minlength: "1",
                     placeholder: "Enter your nickname...",
                     autocomplete: "nickname",
-                    required: "true", // was without value
-                    autofocus: "true" // was without value
+                    required: "true",
+                    autofocus: "true"
                 },
                 {}
             ),
-            createElement("button", { type: "submit" }, {}, "Join Game")
+            createElement("button", { type: "submit" }, {}, "Join Game"),
+            createElement("p", { class: "lobby-error", id: "lobby-error", "aria-live": "polite" }, {}, "")
         ),
     );
 }
