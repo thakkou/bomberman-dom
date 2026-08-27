@@ -15,7 +15,8 @@ const router = Router();
 
 router.addRoute({
   path: "/lobby",
-  handler: () => {
+  handler: async () => {
+    if (await guardLobby()) return;
     patchDOM(router);
     wireLobby();
   },
@@ -24,13 +25,18 @@ router.addRoute({
 
 router.addRoute({
   path: "/waiting",
-  handler: () => { patchDOM(router); wireWaiting(); },
+  handler: async () => {
+    if (await guardWaiting()) return;
+    patchDOM(router);
+    wireWaiting();
+  },
   component: () => App(Waiting()),
 });
 
 router.addRoute({
   path: "/",
-  handler: () => {
+  handler: async () => {
+    if (await guardGame()) return;
     patchDOM(router);
   },
   component: () => App(Game(), Chat()),
@@ -97,4 +103,54 @@ function wireWaiting() {
 function updateWaitingUI(count) {
   const countEl = document.getElementById("player-count");
   if (countEl) countEl.textContent = count;
+}
+
+// --- Route guards ---------------------------------------------------
+
+function redirectTo(path) {
+  if (window.location.pathname !== path) {
+    window.location.href = "/#" + path;
+    return true;
+  }
+  return false;
+}
+
+async function fetchPlayerState() {
+  const playerId = sessionStorage.getItem("bomberman:playerId");
+  if (!playerId) return { playerId: null };
+
+  try {
+    const data = await api.getPlayerStatus(playerId);
+    return { playerId, ...data }; // { playerId, status, room?, queuePosition? }
+  } catch {
+    // Player no longer exists server-side (expired, left, server restarted).
+    sessionStorage.removeItem("bomberman:playerId");
+    sessionStorage.removeItem("bomberman:nickname");
+    return { playerId: null };
+  }
+}
+
+async function guardLobby() {
+  const { playerId, status, room } = await fetchPlayerState();
+  if (!playerId) return false; // no session -> lobby is correct, let it render
+
+  if (status === "room" && room.state === "playing") return redirectTo("/");
+  return redirectTo("/waiting"); // still queued, or in a room that hasn't started
+}
+
+async function guardWaiting() {
+  const { playerId, status, room } = await fetchPlayerState();
+  if (!playerId) return redirectTo("/lobby");
+
+  if (status === "room" && room.state === "playing") return redirectTo("/");
+  return false; // queued or room-not-playing -> waiting page is correct
+}
+
+async function guardGame() {
+  const { playerId, status, room } = await fetchPlayerState();
+  if (!playerId) return redirectTo("/lobby");
+
+  const isPlaying = status === "room" && room.state === "playing";
+  if (!isPlaying) return redirectTo("/waiting");
+  return false;
 }
