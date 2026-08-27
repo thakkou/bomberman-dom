@@ -81,15 +81,18 @@ function wireLobby() {
 
 function wireWaiting() {
   const playerId = sessionStorage.getItem("bomberman:playerId");
-  if (!playerId) { window.location.href = "/lobby"; return; }
+  if (!playerId) { window.location.href = "/#/lobby"; return; }
 
   connectWebSocket(playerId, {
     onRoomUpdate: (room) => {
+      // console.log('x')
+      // setTimeout(1500)
       updateWaitingUI(room.playerCount);
       if (room.playerCount >= 4) { // need to be updated !!!
-        closeWebSocket();
+        // closeWebSocket();
         if (room.state === "waiting") api.startRoom(room.id).catch(() => {});
-        window.location.href = "/";
+        setTimeout(() => redirectTo('/'), 1000); 
+        // window.location.href = "/";
       }
     },
     onQueueUpdate: (queuePosition) => {
@@ -108,7 +111,8 @@ function updateWaitingUI(count) {
 // --- Route guards ---------------------------------------------------
 
 function redirectTo(path) {
-  if (window.location.pathname !== path) {
+  // console.log(window.location.pathname)
+  if (window.location.hash !== path) {
     window.location.href = "/#" + path;
     return true;
   }
