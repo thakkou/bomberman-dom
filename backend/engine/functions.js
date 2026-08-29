@@ -1,7 +1,7 @@
 import crypto from "node:crypto";
 
-import { PLAYERS_PER_ROOM } from "./config.js";
 import * as state from "./globals.js";
+import { PLAYERS_PER_ROOM } from "./config.js";
 
 // ============================================================
 // Utility functions

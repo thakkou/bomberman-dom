@@ -10,6 +10,10 @@ async function request(path, options = {}) {
     return data;
 }
 
+export function getConfig() {
+    return request(`/api/config`);
+}
+
 export function joinQueue(nickname) {
     return request("/api/players", {
         method: "POST",

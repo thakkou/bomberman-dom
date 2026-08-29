@@ -1,5 +1,5 @@
-import * as conf from "../config.js";
-import * as bman from "../functions.js";
+import { PLAYERS_PER_ROOM } from "../engine/config.js";
+import * as bman from "../engine/functions.js";
 import * as json from "../json.js";
 
 export function registerRoomRoutes(route) {
@@ -25,7 +25,7 @@ function handleStartRoom(req, res, { params }) {
     const room = bman.getRoom(params.id);
     if (!room) { json.sendError(res, 404, "Room not found."); return; }
 
-    if (room.players.length !== conf.PLAYERS_PER_ROOM) {
+    if (room.players.length !== PLAYERS_PER_ROOM) {
         json.sendError(res, 409, "Room does not have enough players.");
         return;
     }

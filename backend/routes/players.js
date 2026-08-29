@@ -1,5 +1,5 @@
-import * as state from "../globals.js";
-import * as bman from "../functions.js";
+import * as state from "../engine/globals.js";
+import * as bman from "../engine/functions.js";
 import * as json from "../json.js";
 import { broadcastToRoom, broadcastQueuePositions } from "../wsManager.js";
 

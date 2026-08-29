@@ -1,13 +1,8 @@
 "use strict";
 
-const BOARD_COLUMNS = 19;
-const BOARD_SIZE = 209;
-const START_POSITION = 0;
-const STARTING_LIVES = 3;
-const BOX_SCORE = 100;
-const BOMB_DELAY = 1800;
-const EXPLOSION_TIME = 450;
-const BLAST_RANGE = 2;
+import { getConfig } from "./api.js";
+
+const config = await getConfig();
 
 const cantBeBroken = new Set([
   20, 22, 24, 26, 28, 30, 32, 34, 36, 58, 60, 62, 64, 66, 68, 70, 72, 74,
@@ -18,8 +13,8 @@ const cantBeBroken = new Set([
 const emptySpaces = new Set([0, 1, 2, 17, 18, 19, 37, 38, 171, 189, 190, 191, 207, 208]);
 
 const game = {
-  playerPosition: START_POSITION,
-  lives: STARTING_LIVES,
+  playerPosition: config.START_POSITION,
+  lives: config.STARTING_LIVES,
   score: 0,
   boxes: new Set(),
   bombs: new Map(),
@@ -28,11 +23,11 @@ const game = {
   isGameOver: false,
 };
 
-function generateMapCubes() {
+function generateMapCubes() { // depends on (config.BOARD_SIZE)
   const container = document.getElementById("map-game");
   container.replaceChildren();
   const fragment = document.createDocumentFragment();
-  for (let index = 0; index < BOARD_SIZE; index++) {
+  for (let index = 0; index < config.BOARD_SIZE; index++) {
     const cube = document.createElement("div");
     cube.id = `cube-${index}`;
     cube.className = "cube";
@@ -46,7 +41,7 @@ function generateMapCubes() {
 function generateObstacles(amount = 100) {
   game.boxes.clear();
   const available = [];
-  for (let index = 0; index < BOARD_SIZE; index++) {
+  for (let index = 0; index < config.BOARD_SIZE; index++) {
     if (!cantBeBroken.has(index) && !emptySpaces.has(index)) available.push(index);
   }
   for (let index = available.length - 1; index > 0; index--) {
@@ -57,12 +52,12 @@ function generateObstacles(amount = 100) {
 }
 
 function playersInitState() {
-  game.playerPosition = START_POSITION;
+  game.playerPosition = config.START_POSITION;
   renderGame();
 }
 
-function renderGame() {
-  for (let index = 0; index < BOARD_SIZE; index++) {
+function renderGame() { // depends on (config.BOARD_SIZE, game)
+  for (let index = 0; index < config.BOARD_SIZE; index++) {
     const cube = document.getElementById(`cube-${index}`);
     cube.classList.toggle("box", game.boxes.has(index));
     cube.classList.toggle("bomb", game.bombs.has(index));
@@ -77,9 +72,13 @@ function renderGame() {
   document.getElementById("score").textContent = game.score;
 }
 
+// -----------------------------------------------------------
+// animation & controls
+// -----------------------------------------------------------
+
 function isValidMove(from, to) {
-  if (to < 0 || to >= BOARD_SIZE) return false;
-  if (Math.abs(to - from) === 1 && Math.floor(to / BOARD_COLUMNS) !== Math.floor(from / BOARD_COLUMNS)) return false;
+  if (to < 0 || to >= config.BOARD_SIZE) return false;
+  if (Math.abs(to - from) === 1 && Math.floor(to / config.BOARD_COLUMNS) !== Math.floor(from / config.BOARD_COLUMNS)) return false;
   return !cantBeBroken.has(to) && !game.boxes.has(to) && !game.bombs.has(to);
 }
 
@@ -94,13 +93,13 @@ function movePlayer(offset) {
 
 function movePlayerLeft() { movePlayer(-1); }
 function movePlayerRight() { movePlayer(1); }
-function movePlayerUp() { movePlayer(-BOARD_COLUMNS); }
-function movePlayerDown() { movePlayer(BOARD_COLUMNS); }
+function movePlayerUp() { movePlayer(-config.BOARD_COLUMNS); }
+function movePlayerDown() { movePlayer(config.BOARD_COLUMNS); }
 
 function generateBomb() {
   if (game.isGameOver || game.bombs.size > 0) return false;
   const position = game.playerPosition;
-  const timer = window.setTimeout(() => explodeBomb(position), BOMB_DELAY);
+  const timer = window.setTimeout(() => explodeBomb(position), config.BOMB_DELAY);
   game.bombs.set(position, timer);
   renderGame();
   return true;
@@ -108,11 +107,11 @@ function generateBomb() {
 
 function blastPositions(origin) {
   const positions = [origin];
-  for (const direction of [-1, 1, -BOARD_COLUMNS, BOARD_COLUMNS]) {
-    for (let distance = 1; distance <= BLAST_RANGE; distance++) {
+  for (const direction of [-1, 1, -config.BOARD_COLUMNS, config.BOARD_COLUMNS]) {
+    for (let distance = 1; distance <= config.BLAST_RANGE; distance++) {
       const position = origin + direction * distance;
-      if (position < 0 || position >= BOARD_SIZE) break;
-      if (Math.abs(direction) === 1 && Math.floor(position / BOARD_COLUMNS) !== Math.floor(origin / BOARD_COLUMNS)) break;
+      if (position < 0 || position >= config.BOARD_SIZE) break;
+      if (Math.abs(direction) === 1 && Math.floor(position / config.BOARD_COLUMNS) !== Math.floor(origin / config.BOARD_COLUMNS)) break;
       if (cantBeBroken.has(position)) break;
       positions.push(position);
       if (game.boxes.has(position)) break;
@@ -138,12 +137,12 @@ function explodeBomb(position) {
   window.setTimeout(() => {
     blast.forEach((blastPosition) => game.explosions.delete(blastPosition));
     renderGame();
-  }, EXPLOSION_TIME);
+  }, config.EXPLOSION_TIME);
 }
 
 function destroyObstacle(position) {
   if (!game.boxes.delete(position)) return false;
-  game.score += BOX_SCORE;
+  game.score += config.BOX_SCORE;
   updateScore();
   return true;
 }
@@ -175,18 +174,20 @@ function loseLife() {
   }
   document.getElementById("game-message").textContent = "You were hit! Respawning...";
   window.setTimeout(() => {
-    game.playerPosition = START_POSITION;
+    game.playerPosition = config.START_POSITION;
     game.isInvulnerable = false;
     document.getElementById("game-message").textContent = "Move with Arrow keys or WASD. Drop a bomb with Space.";
     renderGame();
   }, 900);
 }
 
-function restartGame() {
+// -----------------------------------------------------------------
+
+function restartGame() { // i think not needed for now !
   game.bombs.forEach((timer) => window.clearTimeout(timer));
   Object.assign(game, {
-    playerPosition: START_POSITION,
-    lives: STARTING_LIVES,
+    playerPosition: config.START_POSITION,
+    lives: config.STARTING_LIVES,
     score: 0,
     isInvulnerable: false,
     isGameOver: false,
@@ -198,30 +199,34 @@ function restartGame() {
   renderGame();
 }
 
-document.addEventListener("keydown", (event) => {
-  if (event.target.matches("input, textarea")) return;
-  const actions = {
-    ArrowLeft: movePlayerLeft, a: movePlayerLeft,
-    ArrowRight: movePlayerRight, d: movePlayerRight,
-    ArrowUp: movePlayerUp, w: movePlayerUp,
-    ArrowDown: movePlayerDown, s: movePlayerDown,
-    " ": generateBomb,
-  };
-  const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-  if (actions[key]) {
-    event.preventDefault();
-    actions[key]();
-  } else if (key === "r" && game.isGameOver) {
-    restartGame();
-  }
-});
 
-generateMapCubes();
-generateObstacles();
-playersInitState();
+export function startGame() {
+  generateMapCubes();
+  generateObstacles();
+  playersInitState();
+  
+  Object.assign(window, {
+    movePlayerLeft, movePlayerRight, movePlayerUp, movePlayerDown,
+    generateBomb, destroyObstacle, calculeBombPower, updateLives, restartGame,
+    __bombermanGame: game,
+  });
 
-Object.assign(window, {
-  movePlayerLeft, movePlayerRight, movePlayerUp, movePlayerDown,
-  generateBomb, destroyObstacle, calculeBombPower, updateLives, restartGame,
-  __bombermanGame: game,
-});
+  document.addEventListener("keydown", (event) => {
+    if (event.target.matches("input, textarea")) return; // reserved for chat
+    const actions = {
+      ArrowLeft: movePlayerLeft, a: movePlayerLeft,
+      ArrowRight: movePlayerRight, d: movePlayerRight,
+      ArrowUp: movePlayerUp, w: movePlayerUp,
+      ArrowDown: movePlayerDown, s: movePlayerDown,
+      " ": generateBomb,
+    };
+    const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
+    if (actions[key]) {
+      event.preventDefault();
+      actions[key]();
+    } else if (key === "r" && game.isGameOver) {
+      restartGame();
+    }
+  });
+}
+

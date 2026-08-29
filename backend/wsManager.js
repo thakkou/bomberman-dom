@@ -1,6 +1,6 @@
 import { WebSocketServer } from "ws";
-import * as bman from "./functions.js";
-import * as state from "./globals.js";
+import * as bman from "./engine/functions.js";
+import * as state from "./engine/globals.js";
 
 const sockets = new Map(); // playerId -> ws
 

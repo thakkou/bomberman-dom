@@ -10,6 +10,7 @@ import NotFound from "../components/NotFound.js";
 
 import * as api from "./api.js";
 import { connectWebSocket, closeWebSocket } from "./ws.js";
+import { startGame } from "./game.js";
 
 const router = Router();
 
@@ -38,6 +39,7 @@ router.addRoute({
   handler: async () => {
     if (await guardGame()) return;
     patchDOM(router);
+    startGame();
   },
   component: () => App(Game(), Chat()),
 });

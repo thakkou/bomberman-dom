@@ -1,5 +1,7 @@
 import { createElement } from "mini-framework/src/vdom/index.js";
 
+import { sendMessage } from "../scripts/chat.js";
+
 export default function Chat() {
     return createElement(
         "aside",
@@ -21,7 +23,12 @@ export default function Chat() {
         createElement(
             "form",
             { class: "chat-form", id: "chat-form" },
-            {},
+            {
+                submit: (event) => {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            },
             createElement("label", { for: "chat-name" }, {}, "Name"),
             createElement("input", { id: "chat-name", maxlength: "20", placeholder: "Player", autocomplete: "nickname" }, {}),
             createElement("label", { for: "chat-input" }, {}, "Message"),
