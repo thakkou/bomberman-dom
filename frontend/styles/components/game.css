@@ -29,3 +29,9 @@
 .cube.explosion {
   background-color: #f97316;
 }
+
+.player-0 { background: #4f9dff; }
+.player-1 { background: #ff5c5c; }
+.player-2 { background: #4ade80; }
+.player-3 { background: #facc15; }
+.player-me { outline: 2px solid white; }

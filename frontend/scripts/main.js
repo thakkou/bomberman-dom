@@ -10,7 +10,7 @@ import NotFound from "../components/NotFound.js";
 
 import * as api from "./api.js";
 import { connectWebSocket, closeWebSocket } from "./ws.js";
-import { startGame } from "./game.js";
+import { startGame, renderGame } from "./game.js";
 
 const router = Router();
 
@@ -40,6 +40,10 @@ router.addRoute({
     if (await guardGame()) return;
     patchDOM(router);
     startGame();
+    connectWebSocket(sessionStorage.getItem("bomberman:playerId"), {
+      // ...existing handlers from wireWaiting stay for the waiting page only...
+      onGameUpdate: (game) => renderGame(game),
+    });
   },
   component: () => App(Game(), Chat()),
 });
@@ -87,8 +91,6 @@ function wireWaiting() {
 
   connectWebSocket(playerId, {
     onRoomUpdate: (room) => {
-      // console.log('x')
-      // setTimeout(1500)
       updateWaitingUI(room.playerCount);
       if (room.playerCount >= 4) { // need to be updated !!!
         // closeWebSocket();

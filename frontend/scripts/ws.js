@@ -27,9 +27,14 @@ export function connectWebSocket(playerId, handlers = {}) {
         }
         if (payload.type === "room_update") handlers.onRoomUpdate?.(payload.room);
         if (payload.type === "queue_update") handlers.onQueueUpdate?.(payload.queuePosition);
+        if (payload.type === "game_update") handlers.onGameUpdate?.(payload.game, payload.roomState);
     });
 
     return socket;
+}
+
+export function sendGameAction(action) {
+    if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify(action));
 }
 
 export function closeWebSocket() {

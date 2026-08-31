@@ -2,6 +2,9 @@ import { WebSocketServer } from "ws";
 import * as bman from "./engine/functions.js";
 import * as state from "./engine/globals.js";
 
+import { movePlayer, placeBomb, explodeBomb, clearExplosion, checkWinner, serializeGame } from "./engine/gameState.js";
+import { EXPLOSION_TIME } from "./engine/config.js";
+
 const sockets = new Map(); // playerId -> ws
 
 export function createWebSocketServer(httpServer) {
@@ -24,8 +27,14 @@ export function createWebSocketServer(httpServer) {
         }
 
         sockets.set(playerId, ws);
-        console.log("[ws] registered, total sockets:", sockets.size);
-        // console.log([...sockets.values()])
+        // console.log("[ws] registered, total sockets:", sockets.size);
+
+        ws.on("message", (raw) => {
+            let msg;
+            try { msg = JSON.parse(raw); } catch { return; }
+            handleGameMessage(playerId, msg);
+        });
+
         sendCurrentStatus(playerId); // push current state immediately on connect
 
         ws.on("close", () => sockets.delete(playerId));
@@ -85,4 +94,46 @@ function sendCurrentStatus(playerId) {
     } else {
         broadcastQueuePositions([playerId]);
     }
+}
+
+// -------------------------------
+// game functions
+// ------------------------------
+
+function handleGameMessage(playerId, msg) {
+    const roomId = state.playerRooms.get(playerId);
+    const room = roomId && bman.getRoom(roomId);
+    if (!room || room.state !== "playing" || !room.game) return;
+
+    if (msg.type === "move" && movePlayer(room.game, playerId, msg.direction)) {
+        broadcastGameUpdate(room);
+        maybeEndGame(room);
+    }
+
+    if (msg.type === "bomb" && placeBomb(room.game, playerId, (position) => onBombExplode(room, position))) {
+        broadcastGameUpdate(room);
+    }
+}
+
+function onBombExplode(room, position) {
+    const { blast } = explodeBomb(room.game, position);
+    broadcastGameUpdate(room);
+    maybeEndGame(room);
+    setTimeout(() => {
+        clearExplosion(room.game, blast);
+        broadcastGameUpdate(room);
+    }, EXPLOSION_TIME);
+}
+
+function maybeEndGame(room) {
+    const winnerId = checkWinner(room.game);
+    if (winnerId === undefined) return;
+    room.game.winnerId = winnerId;
+    room.state = "finished";
+    broadcastGameUpdate(room);
+}
+
+export function broadcastGameUpdate(room) {
+    const payload = { type: "game_update", game: serializeGame(room.game), roomState: room.state };
+    for (const playerId of room.players) send(playerId, payload);
 }
