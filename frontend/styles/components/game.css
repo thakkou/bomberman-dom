@@ -30,8 +30,43 @@
   background-color: #f97316;
 }
 
-.player-0 { background: #4f9dff; }
-.player-1 { background: #ff5c5c; }
-.player-2 { background: #4ade80; }
-.player-3 { background: #facc15; }
-.player-me { outline: 2px solid white; }
+/******************************/
+
+.map-game {
+  position: relative; /* anchor for absolutely positioned player tokens */
+}
+
+.player-token {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 49px; /* match your .cube size, or use it as var --cell-size */
+  height: 49px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  will-change: transform;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.player-0 { 
+  background: #4f9dff; 
+  filter: hue-rotate(0deg); 
+}
+.player-1 { 
+  background: #ff5c5c; 
+  filter: hue-rotate(90deg); 
+}
+.player-2 { 
+  background: #4ade80; 
+  filter: hue-rotate(180deg); 
+}
+.player-3 { 
+  background: #facc15; 
+  filter: hue-rotate(270deg); 
+}
+.player-me { 
+  outline: 2px solid white; 
+  border-radius: 50%; 
+}

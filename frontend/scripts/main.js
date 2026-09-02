@@ -10,7 +10,7 @@ import NotFound from "../components/NotFound.js";
 
 import * as api from "./api.js";
 import { connectWebSocket, closeWebSocket } from "./ws.js";
-import { startGame, renderGame } from "./game.js";
+import { startGame, onGameUpdate, stopGame } from "./game.js";
 
 const router = Router();
 
@@ -42,7 +42,7 @@ router.addRoute({
     startGame();
     connectWebSocket(sessionStorage.getItem("bomberman:playerId"), {
       // ...existing handlers from wireWaiting stay for the waiting page only...
-      onGameUpdate: (game) => renderGame(game),
+      onGameUpdate: (game) => onGameUpdate(game),
     });
   },
   component: () => App(Game(), Chat()),
@@ -61,6 +61,8 @@ router.init();
 // --- Lobby -> backend -------------------------------------------
 
 function wireLobby() {
+  stopGame();
+
   const form = document.getElementById("nickname-form");
   if (!form) return;
 
@@ -86,6 +88,8 @@ function wireLobby() {
 // --- Waiting room polling -----------------------------------------
 
 function wireWaiting() {
+  stopGame();
+  
   const playerId = sessionStorage.getItem("bomberman:playerId");
   if (!playerId) { window.location.href = "/#/lobby"; return; }
 

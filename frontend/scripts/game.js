@@ -6,6 +6,16 @@ import { sendGameAction } from "./ws.js";
 const config = await getConfig();
 const myPlayerId = sessionStorage.getItem("bomberman:playerId");
 
+const MOVE_DURATION = 150;
+
+let latestGame = null;
+let renderedGame = null;
+let isDirty = false;
+let rafId = null;
+
+const playerEls = new Map();  // playerId -> DOM element
+const playerAnim = new Map(); // playerId -> { fromX, fromY, toX, toY, startTime }
+
 function generateMapCubes() {
   const container = document.getElementById("map-game");
   container.replaceChildren();
@@ -20,62 +30,75 @@ function generateMapCubes() {
   container.appendChild(fragment);
 }
 
-// function generateObstacles(amount = 100) {
-//   game.boxes.clear();
-//   const available = [];
-//   for (let index = 0; index < config.BOARD_SIZE; index++) {
-//     if (!cantBeBroken.has(index) && !emptySpaces.has(index)) available.push(index);
-//   }
-//   for (let index = available.length - 1; index > 0; index--) {
-//     const randomIndex = Math.floor(Math.random() * (index + 1));
-//     [available[index], available[randomIndex]] = [available[randomIndex], available[index]];
-//   }
-//   available.slice(0, Math.min(amount, available.length)).forEach((position) => game.boxes.add(position));
-// }
+function cellSize() {
+  return document.getElementById("cube-0").getBoundingClientRect().width;
+}
 
-// function playersInitState() {
-//   game.playerPosition = config.START_POSITION;
-//   renderGame();
-// }
+function indexToXY(index, size) {
+  const col = index % config.BOARD_COLUMNS;
+  const row = Math.floor(index / config.BOARD_COLUMNS);
+  return { x: col * size, y: row * size };
+}
 
-// function renderGame() { // depends on (config.BOARD_SIZE, game)
-//   for (let index = 0; index < config.BOARD_SIZE; index++) {
-//     const cube = document.getElementById(`cube-${index}`);
-//     cube.classList.toggle("box", game.boxes.has(index));
-//     cube.classList.toggle("bomb", game.bombs.has(index));
-//     cube.classList.toggle("explosion", game.explosions.has(index));
-//     cube.classList.toggle("player", index === game.playerPosition && !game.isGameOver);
-//     cube.textContent = game.explosions.has(index) ? "💥"
-//       : game.bombs.has(index) ? "💣"
-//       : index === game.playerPosition && !game.isGameOver ? "Player"
-//       : game.boxes.has(index) ? "Box" : "";
-//   }
-//   document.getElementById("lives").textContent = game.lives;
-//   document.getElementById("score").textContent = game.score;
-// }
+function currentAnimatedPosition(anim) {
+  const t = Math.min(1, (performance.now() - anim.startTime) / MOVE_DURATION);
+  return {
+    x: anim.fromX + (anim.toX - anim.fromX) * t,
+    y: anim.fromY + (anim.toY - anim.fromY) * t,
+  };
+}
 
-export function renderGame(game) {
-  // console.log(game)
+function ensurePlayerElement(playerId, index, size) {
+  let el = playerEls.get(playerId);
+  if (el) return el;
+
+  el = document.createElement("div");
+  el.className = "player-token";
+  el.textContent = "🙂";
+  document.getElementById("map-game").appendChild(el);
+  playerEls.set(playerId, el);
+
+  const { x, y } = indexToXY(index, size);
+  el.style.transform = `translate(${x}px, ${y}px)`;
+  playerAnim.set(playerId, { fromX: x, fromY: y, toX: x, toY: y, startTime: 0 });
+  return el;
+}
+
+function queueMove(playerId, index, size) {
+  const { x, y } = indexToXY(index, size);
+  const from = currentAnimatedPosition(playerAnim.get(playerId));
+  playerAnim.set(playerId, { fromX: from.x, fromY: from.y, toX: x, toY: y, startTime: performance.now() });
+}
+
+// --- state -> DOM, only when new data arrived (called from the rAF loop) ---
+
+function renderStaticCells(game) {
   for (let index = 0; index < config.BOARD_SIZE; index++) {
     const cube = document.getElementById(`cube-${index}`);
-    cube.className = "cube"; // reset, since players move between renders
-    cube.classList.toggle("box", game.boxes.includes(index));
-    cube.classList.toggle("cant-be-broken", config.WALLS.includes(index));
-    cube.classList.toggle("bomb", game.bombs.includes(index));
-    cube.classList.toggle("explosion", game.explosions.includes(index));
-    cube.textContent = game.explosions.includes(index) ? "💥"
-      : game.bombs.includes(index) ? "💣"
-      : game.boxes.includes(index) ? "Box" : "";
+    const isBox = game.boxes.includes(index);
+    const isBomb = game.bombs.includes(index);
+    const isExplosion = game.explosions.includes(index);
+
+    cube.classList.toggle("box", isBox);
+    cube.classList.toggle("bomb", isBomb);
+    cube.classList.toggle("explosion", isExplosion);
+    cube.textContent = isExplosion ? "💥" : isBomb ? "💣" : isBox ? "Box" : "";
   }
+}
 
+function renderPlayers(game, size) {
   Object.entries(game.players).forEach(([playerId, player], i) => {
-    if (!player.alive) return;
-    const cell = document.getElementById(`cube-${player.position}`);
-    cell.classList.add("player", `player-${i}`);
-    if (playerId === myPlayerId) cell.classList.add("player-me");
-    cell.textContent = "🙂";
-  });
+    const el = ensurePlayerElement(playerId, player.position, size);
+    el.classList.toggle(`player-${i}`, true);
+    el.classList.toggle("player-me", playerId === myPlayerId);
+    el.style.display = player.alive ? "" : "none";
 
+    const prevPosition = renderedGame?.players?.[playerId]?.position;
+    if (prevPosition !== player.position) queueMove(playerId, player.position, size);
+  });
+}
+
+function renderHUD(game) {
   const me = game.players[myPlayerId];
   if (me) {
     document.getElementById("lives").textContent = me.lives;
@@ -90,166 +113,40 @@ export function renderGame(game) {
   }
 }
 
-// -----------------------------------------------------------
-// animation & controls
-// -----------------------------------------------------------
+// --- the animation loop ---
 
-// function isValidMove(from, to) {
-//   if (to < 0 || to >= config.BOARD_SIZE) return false;
-//   if (Math.abs(to - from) === 1 && Math.floor(to / config.BOARD_COLUMNS) !== Math.floor(from / config.BOARD_COLUMNS)) return false;
-//   return !cantBeBroken.has(to) && !game.boxes.has(to) && !game.bombs.has(to);
-// }
+function tick() {
+  if (isDirty && latestGame) {
+    const size = cellSize() + 1; // because of margin ?!
+    // console.log(size)
+    renderStaticCells(latestGame);
+    renderPlayers(latestGame, size);
+    renderHUD(latestGame);
+    renderedGame = latestGame;
+    isDirty = false;
+  }
 
-// function movePlayer(offset) {
-//   if (game.isGameOver) return;
-//   const nextPosition = game.playerPosition + offset;
-//   if (!isValidMove(game.playerPosition, nextPosition)) return;
-//   game.playerPosition = nextPosition;
-//   renderGame();
-//   if (game.explosions.has(nextPosition)) loseLife();
-// }
+  // Interpolate token positions every frame, independent of when data arrives.
+  for (const [playerId, anim] of playerAnim) {
+    const el = playerEls.get(playerId);
+    if (!el) continue;
+    const { x, y } = currentAnimatedPosition(anim);
+    el.style.transform = `translate(${x}px, ${y}px)`;
+  }
 
-// function movePlayerLeft() { movePlayer(-1); }
-// function movePlayerRight() { movePlayer(1); }
-// function movePlayerUp() { movePlayer(-config.BOARD_COLUMNS); }
-// function movePlayerDown() { movePlayer(config.BOARD_COLUMNS); }
+  rafId = requestAnimationFrame(tick);
+}
 
-// function generateBomb() {
-//   if (game.isGameOver || game.bombs.size > 0) return false;
-//   const position = game.playerPosition;
-//   const timer = window.setTimeout(() => explodeBomb(position), config.BOMB_DELAY);
-//   game.bombs.set(position, timer);
-//   renderGame();
-//   return true;
-// }
+// --- public API ---
 
-// function blastPositions(origin) {
-//   const positions = [origin];
-//   for (const direction of [-1, 1, -config.BOARD_COLUMNS, config.BOARD_COLUMNS]) {
-//     for (let distance = 1; distance <= config.BLAST_RANGE; distance++) {
-//       const position = origin + direction * distance;
-//       if (position < 0 || position >= config.BOARD_SIZE) break;
-//       if (Math.abs(direction) === 1 && Math.floor(position / config.BOARD_COLUMNS) !== Math.floor(origin / config.BOARD_COLUMNS)) break;
-//       if (cantBeBroken.has(position)) break;
-//       positions.push(position);
-//       if (game.boxes.has(position)) break;
-//     }
-//   }
-//   return positions;
-// }
-
-// function explodeBomb(position) {
-//   if (!game.bombs.has(position)) return;
-//   window.clearTimeout(game.bombs.get(position));
-//   game.bombs.delete(position);
-//   const blast = blastPositions(position);
-//   for (const blastPosition of blast) {
-//     game.explosions.add(blastPosition);
-//     destroyObstacle(blastPosition);
-//   }
-//   renderGame();
-//   calculeBombPower(blast);
-//   blast.forEach((blastPosition) => {
-//     if (game.bombs.has(blastPosition)) explodeBomb(blastPosition);
-//   });
-//   window.setTimeout(() => {
-//     blast.forEach((blastPosition) => game.explosions.delete(blastPosition));
-//     renderGame();
-//   }, config.EXPLOSION_TIME);
-// }
-
-// function destroyObstacle(position) {
-//   if (!game.boxes.delete(position)) return false;
-//   game.score += config.BOX_SCORE;
-//   updateScore();
-//   return true;
-// }
-
-// function calculeBombPower(blast) {
-//   if (blast.includes(game.playerPosition)) loseLife();
-//   return blast;
-// }
-
-// function updateScore() {
-//   document.getElementById("score").textContent = game.score;
-// }
-
-// function updateLives(change = -1) {
-//   game.lives = Math.max(0, game.lives + change);
-//   document.getElementById("lives").textContent = game.lives;
-//   return game.lives;
-// }
-
-// function loseLife() {
-//   if (game.isInvulnerable || game.isGameOver) return;
-//   game.isInvulnerable = true;
-//   updateLives(-1);
-//   if (game.lives === 0) {
-//     game.isGameOver = true;
-//     document.getElementById("game-message").textContent = `Game over. Final score: ${game.score}. Press R to restart.`;
-//     renderGame();
-//     return;
-//   }
-//   document.getElementById("game-message").textContent = "You were hit! Respawning...";
-//   window.setTimeout(() => {
-//     game.playerPosition = config.START_POSITION;
-//     game.isInvulnerable = false;
-//     document.getElementById("game-message").textContent = "Move with Arrow keys or WASD. Drop a bomb with Space.";
-//     renderGame();
-//   }, 900);
-// }
-
-// -----------------------------------------------------------------
-
-// function restartGame() { // i think not needed for now !
-//   game.bombs.forEach((timer) => window.clearTimeout(timer));
-//   Object.assign(game, {
-//     playerPosition: config.START_POSITION,
-//     lives: config.STARTING_LIVES,
-//     score: 0,
-//     isInvulnerable: false,
-//     isGameOver: false,
-//   });
-//   game.bombs.clear();
-//   game.explosions.clear();
-//   generateObstacles();
-//   document.getElementById("game-message").textContent = "Move with Arrow keys or WASD. Drop a bomb with Space.";
-//   renderGame();
-// }
-
-
-// export function startGame() {
-//   generateMapCubes();
-//   generateObstacles();
-//   playersInitState();
-  
-//   Object.assign(window, {
-//     movePlayerLeft, movePlayerRight, movePlayerUp, movePlayerDown,
-//     generateBomb, destroyObstacle, calculeBombPower, updateLives, restartGame,
-//     __bombermanGame: game,
-//   });
-
-//   document.addEventListener("keydown", (event) => {
-//     if (event.target.matches("input, textarea")) return; // reserved for chat
-//     const actions = {
-//       ArrowLeft: movePlayerLeft, a: movePlayerLeft,
-//       ArrowRight: movePlayerRight, d: movePlayerRight,
-//       ArrowUp: movePlayerUp, w: movePlayerUp,
-//       ArrowDown: movePlayerDown, s: movePlayerDown,
-//       " ": generateBomb,
-//     };
-//     const key = event.key.length === 1 ? event.key.toLowerCase() : event.key;
-//     if (actions[key]) {
-//       event.preventDefault();
-//       actions[key]();
-//     } else if (key === "r" && game.isGameOver) {
-//       restartGame();
-//     }
-//   });
-// }
+export function onGameUpdate(game) {
+  latestGame = game; // just cache it — rendering happens in tick()
+  isDirty = true;
+}
 
 export function startGame() {
   generateMapCubes();
+  if (!rafId) rafId = requestAnimationFrame(tick);
 
   document.addEventListener("keydown", (event) => {
     if (event.target.matches("input, textarea")) return;
@@ -262,3 +159,7 @@ export function startGame() {
   });
 }
 
+export function stopGame() {
+  if (rafId) cancelAnimationFrame(rafId);
+  rafId = null;
+}
