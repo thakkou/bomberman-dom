@@ -12,6 +12,9 @@ export const BOMB_DELAY = 1800;
 export const EXPLOSION_TIME = 450;
 export const BLAST_RANGE = 2;
 
+export const QUEUE_WAIT_MS = 20_000; // max wait before locking in whoever's queued
+export const COUNTDOWN_MS = 10_000;  // "get ready" countdown before the game starts
+
 // Fixed walls — same pattern for every game, every room.
 export const WALLS = new Set([
     20, 22, 24, 26, 28, 30, 32, 34, 36, 58, 60, 62, 64, 66, 68, 70, 72, 74,

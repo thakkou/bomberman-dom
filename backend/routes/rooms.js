@@ -6,7 +6,7 @@ import { broadcastGameUpdate } from "../wsManager.js";
 
 export function registerRoomRoutes(route) {
     route("GET", "/api/rooms/:id", handleGetRoom);
-    route("POST", "/api/rooms/:id/start", handleStartRoom);
+    // route("POST", "/api/rooms/:id/start", handleStartRoom);
 }
 
 function handleGetRoom(req, res, { params }) {
@@ -23,20 +23,20 @@ function handleGetRoom(req, res, { params }) {
     });
 }
 
-function handleStartRoom(req, res, { params }) {
-    const room = bman.getRoom(params.id);
-    if (!room) { json.sendError(res, 404, "Room not found."); return; }
+// function handleStartRoom(req, res, { params }) {
+//     const room = bman.getRoom(params.id);
+//     if (!room) { json.sendError(res, 404, "Room not found."); return; }
 
-    if (room.players.length !== PLAYERS_PER_ROOM) {
-        json.sendError(res, 409, "Room does not have enough players.");
-        return;
-    }
+//     if (room.players.length !== PLAYERS_PER_ROOM) {
+//         json.sendError(res, 409, "Room does not have enough players.");
+//         return;
+//     }
 
-    room.state = "playing";
-    room.game = createGameState(room.players); // +
-    json.sendJson(res, 200, {
-        success: true,
-        room: { id: room.id, state: room.state }
-    });
-    broadcastGameUpdate(room); // push the initial board to everyone immediately
-}
+//     room.state = "playing";
+//     room.game = createGameState(room.players); // +
+//     json.sendJson(res, 200, {
+//         success: true,
+//         room: { id: room.id, state: room.state }
+//     });
+//     broadcastGameUpdate(room); // push the initial board to everyone immediately
+// }

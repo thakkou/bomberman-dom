@@ -38,6 +38,7 @@ router.addRoute({
   path: "/",
   handler: async () => {
     if (await guardGame()) return;
+    stopWaitingTimers();
     patchDOM(router);
     startGame();
     connectWebSocket(sessionStorage.getItem("bomberman:playerId"), {
@@ -62,6 +63,7 @@ router.init();
 
 function wireLobby() {
   stopGame();
+  stopWaitingTimers();
 
   const form = document.getElementById("nickname-form");
   if (!form) return;
@@ -87,33 +89,89 @@ function wireLobby() {
 
 // --- Waiting room polling -----------------------------------------
 
+let tickHandle = null;
+
 function wireWaiting() {
-  stopGame();
-  
   const playerId = sessionStorage.getItem("bomberman:playerId");
   if (!playerId) { window.location.href = "/#/lobby"; return; }
 
   connectWebSocket(playerId, {
-    onRoomUpdate: (room) => {
-      updateWaitingUI(room.playerCount);
-      if (room.playerCount >= 4) { // need to be updated !!!
-        // closeWebSocket();
-        if (room.state === "waiting") api.startRoom(room.id).catch(() => {});
-        setTimeout(() => redirectTo('/'), 1000); 
-        // window.location.href = "/";
-      }
+    onRoomUpdate: (room) => updateWaitingUI(room.playerCount),
+    onQueueUpdate: (queuePosition) => updateWaitingUI(queuePosition),
+    onQueueTimer: (endsAt) => startTimerDisplay("queue-timer", endsAt, "Locking in players in"),
+    onCountdown: (endsAt) => {
+      document.getElementById("queue-timer").textContent = "";
+      startTimerDisplay("countdown-timer", endsAt, "Game starts in");
     },
-    onQueueUpdate: (queuePosition) => {
-      // optional: show "Position N in queue"
-      updateWaitingUI(queuePosition);
+    onGameUpdate: () => { setTimeout(() => redirectTo("/"), 300); }, // countdown hit 0, room started
+    onTimerCancelled: (timer) => {
+      if (tickHandle) clearInterval(tickHandle);
+      const elementId = timer === "countdown" ? "countdown-timer" : "queue-timer";
+      const el = document.getElementById(elementId);
+      if (el) el.textContent = "";
     },
     onError: (err) => console.error("WebSocket error", err),
   });
+
+  document.getElementById("leave-waiting")?.addEventListener("click", async () => {
+    stopWaitingTimers();
+    const playerId = sessionStorage.getItem("bomberman:playerId");
+    if (playerId) await api.leaveQueue(playerId).catch(() => {});
+    sessionStorage.removeItem("bomberman:playerId");
+    sessionStorage.removeItem("bomberman:nickname");
+    window.location.href = "/#/lobby";
+  });
 }
+
+function startTimerDisplay(elementId, endsAt, label) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  if (tickHandle) clearInterval(tickHandle);
+
+  const tick = () => {
+    const secondsLeft = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+    el.textContent = `${label} ${secondsLeft}s`;
+    if (secondsLeft <= 0) clearInterval(tickHandle);
+  };
+  tick();
+  tickHandle = setInterval(tick, 250);
+}
+
+// function wireWaiting() {
+//   stopGame();
+  
+//   const playerId = sessionStorage.getItem("bomberman:playerId");
+//   if (!playerId) { window.location.href = "/#/lobby"; return; }
+
+//   connectWebSocket(playerId, {
+//     onRoomUpdate: (room) => {
+//       updateWaitingUI(room.playerCount);
+//       if (room.playerCount >= 4) { // need to be updated !!!
+//         // closeWebSocket();
+//         if (room.state === "waiting") api.startRoom(room.id).catch(() => {});
+//         setTimeout(() => redirectTo('/'), 1000); 
+//         // window.location.href = "/";
+//       }
+//     },
+//     onQueueUpdate: (queuePosition) => {
+//       // optional: show "Position N in queue"
+//       updateWaitingUI(queuePosition);
+//     },
+//     onError: (err) => console.error("WebSocket error", err),
+//   });
+// }
 
 function updateWaitingUI(count) {
   const countEl = document.getElementById("player-count");
   if (countEl) countEl.textContent = count;
+}
+
+function stopWaitingTimers() {
+  if (tickHandle) clearInterval(tickHandle);
+  tickHandle = null;
+  document.getElementById("queue-timer")?.remove();
+  document.getElementById("countdown-timer")?.remove();
+  document.getElementById("leave-waiting")?.remove();
 }
 
 // --- Route guards ---------------------------------------------------
@@ -166,3 +224,24 @@ async function guardGame() {
   if (!isPlaying) return redirectTo("/waiting");
   return false;
 }
+
+// **********************************************************************
+
+window.addEventListener("pagehide", () => {
+  // pagehide over beforeunload: it fires reliably on tab close, back/forward navigation,
+  // and mobile Safari (where beforeunload is unreliable)
+  closeWebSocket();
+
+  const playerId = sessionStorage.getItem("bomberman:playerId");
+  if (!playerId) return;
+
+  // fetch is normally cancelled mid-unload; keepalive lets this last request
+  // finish in the background even after the page has started tearing down.
+  fetch(`http://localhost:8080/api/players/${playerId}`, {
+    method: "DELETE",
+    keepalive: true,
+  }).catch(() => {});
+
+  sessionStorage.removeItem("bomberman:playerId");
+  sessionStorage.removeItem("bomberman:nickname");
+});

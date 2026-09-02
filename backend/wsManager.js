@@ -4,6 +4,8 @@ import * as state from "./engine/globals.js";
 
 import { movePlayer, placeBomb, explodeBomb, clearExplosion, checkWinner, serializeGame } from "./engine/gameState.js";
 import { EXPLOSION_TIME } from "./engine/config.js";
+import { getMatchmakingStatusFor } from "./engine/matchmaking.js";
+// wsManager.js and matchmaking.js now import each other — that's fine in ES modules as long as neither calls the other at the top level (they don't; every call happens inside a function body).
 
 const sockets = new Map(); // playerId -> ws
 
@@ -90,10 +92,14 @@ function sendCurrentStatus(playerId) {
     const roomId = state.playerRooms.get(playerId);
     if (roomId) {
         const room = bman.getRoom(roomId);
-        if (room) broadcastToRoom(room);
-    } else {
-        broadcastQueuePositions([playerId]);
+        if (room) room.game ? broadcastGameUpdate(room) : broadcastToRoom(room);
+        return;
     }
+
+    broadcastQueuePositions([playerId]);
+    const { queueEndsAt, countdownEndsAt } = getMatchmakingStatusFor(playerId);
+    if (countdownEndsAt) send(playerId, { type: "countdown", endsAt: countdownEndsAt });
+    else if (queueEndsAt) send(playerId, { type: "queue_timer", endsAt: queueEndsAt });
 }
 
 // -------------------------------
@@ -136,4 +142,18 @@ function maybeEndGame(room) {
 export function broadcastGameUpdate(room) {
     const payload = { type: "game_update", game: serializeGame(room.game), roomState: room.state };
     for (const playerId of room.players) send(playerId, payload);
+}
+
+// timers
+
+export function broadcastQueueTimer(playerIds, endsAt) {
+    for (const playerId of playerIds) send(playerId, { type: "queue_timer", endsAt });
+}
+
+export function broadcastCountdown(playerIds, endsAt) {
+    for (const playerId of playerIds) send(playerId, { type: "countdown", endsAt });
+}
+
+export function broadcastTimerCancelled(playerIds, timer) {
+    for (const playerId of playerIds) send(playerId, { type: "timer_cancelled", timer });
 }

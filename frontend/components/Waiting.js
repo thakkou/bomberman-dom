@@ -19,9 +19,12 @@ export default function Waiting() {
             "p",
             { class: "waiting-status" },
             {},
-            "The game will start when ",
-            createElement("span", {}, {}, "4 players"),
-            " have joined."
-        )
+            createElement("p", { class: "queue-timer", id: "queue-timer", "aria-live": "polite" }, {}, ""),
+            createElement("p", { class: "countdown-timer", id: "countdown-timer", "aria-live": "polite" }, {}, ""),
+            // "The game will start when ",
+            // createElement("span", {}, {}, "4 players"),
+            // " have joined."
+        ),
+        createElement("button", { id: "leave-waiting", type: "button" }, {}, "Leave")
     );
 }

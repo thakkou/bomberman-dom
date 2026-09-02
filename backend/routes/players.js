@@ -2,6 +2,7 @@ import * as state from "../engine/globals.js";
 import * as bman from "../engine/functions.js";
 import * as json from "../json.js";
 import { broadcastToRoom, broadcastQueuePositions } from "../wsManager.js";
+import * as matchmaking from "../engine/matchmaking.js";
 
 export function registerPlayerRoutes(route) {
     route("POST", "/api/players", handleJoin);
@@ -53,31 +54,43 @@ async function handleJoin(req, res) {
     // Add player to queue
     state.waitingQueue.push(player.id);
 
-    // Try to create rooms
-    const createdRooms = bman.processQueue();
-    for (const room of createdRooms) broadcastToRoom(room);
-    broadcastQueuePositions(state.waitingQueue); // refresh positions for everyone still waiting
+    // UPDATED
+    matchmaking.onQueueChanged();
 
-
-    // Determine player's current state
-    const roomId = state.playerRooms.get(player.id);
-    if (roomId) {
-        const room = bman.getRoom(roomId);
-        json.sendJson(res, 201, {
-            player,
-            status: "room",
-            roomId: room.id,
-            room: { id: room.id, state: room.state, playerCount: room.players.length }
-        });
-        return;
-    }
-
-    // Player is still waiting.
     json.sendJson(res, 201, {
         player,
         status: "waiting",
         queuePosition: bman.getQueuePosition(player.id)
     });
+    return;
+    // (room-formation branch is gone — a fresh joiner is always "waiting" now;
+    //  the room shows up later via the "game_update" WS message)
+
+    // Try to create rooms
+    // const createdRooms = bman.processQueue();
+    // for (const room of createdRooms) broadcastToRoom(room);
+    // broadcastQueuePositions(state.waitingQueue); // refresh positions for everyone still waiting
+
+
+    // Determine player's current state
+    // const roomId = state.playerRooms.get(player.id);
+    // if (roomId) {
+    //     const room = bman.getRoom(roomId);
+    //     json.sendJson(res, 201, {
+    //         player,
+    //         status: "room",
+    //         roomId: room.id,
+    //         room: { id: room.id, state: room.state, playerCount: room.players.length }
+    //     });
+    //     return;
+    // }
+
+    // Player is still waiting.
+    // json.sendJson(res, 201, {
+    //     player,
+    //     status: "waiting",
+    //     queuePosition: bman.getQueuePosition(player.id)
+    // });
 }
 
 function handleGetPlayer(req, res, { params }) {
@@ -112,6 +125,13 @@ function handleLeavePlayer(req, res, { params }) {
     const queueIndex = state.waitingQueue.indexOf(playerId);
     if (queueIndex !== -1) {
         state.waitingQueue.splice(queueIndex, 1);
+        state.players.delete(playerId);
+        matchmaking.onPlayerLeftQueue();
+        json.sendJson(res, 200, { success: true });
+        return;
+    }
+
+    if (matchmaking.onLockedPlayerLeft(playerId)) {
         state.players.delete(playerId);
         json.sendJson(res, 200, { success: true });
         return;
