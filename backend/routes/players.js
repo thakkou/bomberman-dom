@@ -38,9 +38,10 @@ async function handleJoin(req, res) {
     // Check nickname uniqueness:
     // This check + insertion happens synchronously,
     // so another request cannot slip between the check and insertion.
-    const nicknameTaken = [...state.players.values()].some(
-        player => player.nickname.toLowerCase() === nickname.toLowerCase()
-    );
+    const nicknameTaken = state.waitingQueue.some(playerId => {
+        const queuedPlayer = bman.getPlayer(playerId);
+        return queuedPlayer?.nickname.toLowerCase() === nickname.toLowerCase();
+    });
     if (nicknameTaken) {
         json.sendError(res, 409, "This nickname is already taken.");
         return;

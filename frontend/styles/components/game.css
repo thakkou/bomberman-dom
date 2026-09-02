@@ -54,18 +54,22 @@
   background: #4f9dff; 
   filter: hue-rotate(0deg); 
 }
+
 .player-1 { 
   background: #ff5c5c; 
   filter: hue-rotate(90deg); 
 }
+
 .player-2 { 
   background: #4ade80; 
   filter: hue-rotate(180deg); 
 }
+
 .player-3 { 
   background: #facc15; 
   filter: hue-rotate(270deg); 
 }
+
 .player-me { 
   outline: 2px solid white; 
   border-radius: 50%; 
