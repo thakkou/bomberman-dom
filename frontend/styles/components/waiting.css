@@ -61,3 +61,25 @@
 .waiting-status span {
     color: #60a5fa;
 }
+
+/**************************/
+
+.btn-leave {
+  /* Reset default styles */
+  background: #f3f4f6;
+  color: #1f2937;
+  border: 1px solid #d1d5db;
+  padding: 10px 20px;
+  font-size: 16px;
+  font-family: inherit;
+  font-weight: 500;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+/* Hover state */
+.btn-leave:hover {
+  background: #fee2e2;
+  color: #dc2626;
+  border-color: #fca5a5;
+}

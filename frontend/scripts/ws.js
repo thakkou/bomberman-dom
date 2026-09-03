@@ -27,10 +27,11 @@ export function connectWebSocket(playerId, handlers = {}) {
         }
         if (payload.type === "room_update") handlers.onRoomUpdate?.(payload.room);
         if (payload.type === "queue_update") handlers.onQueueUpdate?.(payload.queuePosition);
-        if (payload.type === "game_update") handlers.onGameUpdate?.(payload.game, payload.roomState);
+        if (payload.type === "game_update") handlers.onGameUpdate?.(payload.game, payload.roomState, payload.countdownEndsAt);
         if (payload.type === "queue_timer") handlers.onQueueTimer?.(payload.endsAt);
         if (payload.type === "countdown") handlers.onCountdown?.(payload.endsAt);
         if (payload.type === "timer_cancelled") handlers.onTimerCancelled?.(payload.timer);
+        if (payload.type === "opponents_left") handlers.onOpponentsLeft?.();
     });
 
     return socket;

@@ -13,6 +13,9 @@ let renderedGame = null;
 let isDirty = false;
 let rafId = null;
 
+let roomState = null;
+let startCountdownInterval = null;
+
 const playerEls = new Map();  // playerId -> DOM element
 const playerAnim = new Map(); // playerId -> { fromX, fromY, toX, toY, startTime }
 
@@ -139,12 +142,44 @@ function tick() {
 
 // --- public API ---
 
-export function onGameUpdate(game) {
-  latestGame = game; // just cache it — rendering happens in tick()
+function toggleBoardVisibility() {
+  const board = document.getElementById("map-game");
+  const overlay = document.getElementById("start-countdown");
+  if (!board || !overlay) return;
+
+  const starting = roomState === "starting";
+  board.style.display = starting ? "none" : "";
+  overlay.style.display = starting ? "" : "none";
+  if (!starting && startCountdownInterval) { clearInterval(startCountdownInterval); startCountdownInterval = null; }
+}
+
+function startCountdownDisplay(endsAt) {
+  const overlay = document.getElementById("start-countdown");
+  if (!overlay) return;
+  if (startCountdownInterval) clearInterval(startCountdownInterval);
+
+  const tick = () => {
+    const secondsLeft = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
+    overlay.textContent = `Game starts in ${secondsLeft}s`;
+    if (secondsLeft <= 0) clearInterval(startCountdownInterval);
+  };
+  tick();
+  startCountdownInterval = setInterval(tick, 250);
+}
+
+export function onGameUpdate(game, newRoomState, countdownEndsAt) {
+  if (newRoomState && newRoomState !== roomState) {
+    roomState = newRoomState;
+    toggleBoardVisibility();
+  }
+  if (roomState === "starting" && countdownEndsAt) startCountdownDisplay(countdownEndsAt);
+
+  latestGame = game;
   isDirty = true;
 }
 
 export function startGame() {
+  roomState = null;
   generateMapCubes();
   if (!rafId) rafId = requestAnimationFrame(tick);
 

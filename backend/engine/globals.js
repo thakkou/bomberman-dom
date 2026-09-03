@@ -17,4 +17,4 @@ export const playerRooms = new Map();
 export const players = new Map();
 
 // playerId -> batchId, only while locked (pre-room)
-export const playerBatches = new Map();
+// export const playerBatches = new Map();

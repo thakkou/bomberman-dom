@@ -43,7 +43,13 @@ router.addRoute({
     startGame();
     connectWebSocket(sessionStorage.getItem("bomberman:playerId"), {
       // ...existing handlers from wireWaiting stay for the waiting page only...
-      onGameUpdate: (game) => onGameUpdate(game),
+      onGameUpdate: (game, roomState, countdownEndsAt) => onGameUpdate(game, roomState, countdownEndsAt),
+      onOpponentsLeft: () => {
+        closeWebSocket();
+        sessionStorage.removeItem("bomberman:playerId"); // keep nickname for prefill
+        sessionStorage.setItem("bomberman:opponentsLeft", "1");
+        window.location.href = "/#/lobby";
+      },
     });
   },
   component: () => App(Game(), Chat()),
@@ -68,6 +74,16 @@ function wireLobby() {
   const form = document.getElementById("nickname-form");
   if (!form) return;
 
+  const input = document.getElementById("nickname");
+  const errorEl = document.getElementById("lobby-error");
+
+  if (sessionStorage.getItem("bomberman:opponentsLeft")) {
+    sessionStorage.removeItem("bomberman:opponentsLeft");
+    input.value = sessionStorage.getItem("bomberman:nickname") ?? "";
+    errorEl.style.display = 'flex';
+    errorEl.textContent = "All other players left the game.";
+  }
+
   form.addEventListener("submit", async (event) => {
     event.preventDefault();
 
@@ -75,6 +91,7 @@ function wireLobby() {
     const errorEl = document.getElementById("lobby-error");
     const nickname = input.value.trim();
     errorEl.textContent = "";
+    errorEl.style.display = 'none';
 
     try {
       const data = await api.joinQueue(nickname);
@@ -82,6 +99,7 @@ function wireLobby() {
       sessionStorage.setItem("bomberman:nickname", nickname);
       window.location.href = "/#/waiting"; // use navigate or href
     } catch (err) {
+      errorEl.style.display = 'flex';
       errorEl.textContent = err.message;
     }
   });
@@ -99,11 +117,14 @@ function wireWaiting() {
     onRoomUpdate: (room) => updateWaitingUI(room.playerCount),
     onQueueUpdate: (queuePosition) => updateWaitingUI(queuePosition),
     onQueueTimer: (endsAt) => startTimerDisplay("queue-timer", endsAt, "Locking in players in"),
-    onCountdown: (endsAt) => {
-      document.getElementById("queue-timer").textContent = "";
-      startTimerDisplay("countdown-timer", endsAt, "Game starts in");
-    },
-    onGameUpdate: () => { setTimeout(() => redirectTo("/"), 300); }, // countdown hit 0, room started
+    // onCountdown: (endsAt) => {
+      //   document.getElementById("queue-timer").textContent = "";
+      //   startTimerDisplay("countdown-timer", endsAt, "Game starts in");
+      // },
+    onGameUpdate: () => { stopWaitingTimers(); setTimeout(() => redirectTo("/"), 200); }, // fires on "starting" now — redirect immediately
+    // onGameUpdate: () => {
+    //   setTimeout(() => redirectTo("/"), 300);
+    // }, // countdown hit 0, room started
     onTimerCancelled: (timer) => {
       if (tickHandle) clearInterval(tickHandle);
       const elementId = timer === "countdown" ? "countdown-timer" : "queue-timer";
@@ -136,30 +157,6 @@ function startTimerDisplay(elementId, endsAt, label) {
   tick();
   tickHandle = setInterval(tick, 250);
 }
-
-// function wireWaiting() {
-//   stopGame();
-  
-//   const playerId = sessionStorage.getItem("bomberman:playerId");
-//   if (!playerId) { window.location.href = "/#/lobby"; return; }
-
-//   connectWebSocket(playerId, {
-//     onRoomUpdate: (room) => {
-//       updateWaitingUI(room.playerCount);
-//       if (room.playerCount >= 4) { // need to be updated !!!
-//         // closeWebSocket();
-//         if (room.state === "waiting") api.startRoom(room.id).catch(() => {});
-//         setTimeout(() => redirectTo('/'), 1000); 
-//         // window.location.href = "/";
-//       }
-//     },
-//     onQueueUpdate: (queuePosition) => {
-//       // optional: show "Position N in queue"
-//       updateWaitingUI(queuePosition);
-//     },
-//     onError: (err) => console.error("WebSocket error", err),
-//   });
-// }
 
 function updateWaitingUI(count) {
   const countEl = document.getElementById("player-count");
@@ -201,29 +198,49 @@ async function fetchPlayerState() {
 }
 
 async function guardLobby() {
-  const { playerId, status, room } = await fetchPlayerState();
-  if (!playerId) return false; // no session -> lobby is correct, let it render
-
-  if (status === "room" && room.state === "playing") return redirectTo("/");
-  return redirectTo("/waiting"); // still queued, or in a room that hasn't started
+  const { playerId, status } = await fetchPlayerState();
+  if (!playerId) return false;
+  return redirectTo(status === "room" ? "/" : "/waiting");
 }
+// async function guardLobby() {
+//   const { playerId, status, room } = await fetchPlayerState();
+//   if (!playerId) return false; // no session -> lobby is correct, let it render
+
+//   if (status === "room" && room.state === "playing") return redirectTo("/");
+//   return redirectTo("/waiting"); // still queued, or in a room that hasn't started
+// }
 
 async function guardWaiting() {
-  const { playerId, status, room } = await fetchPlayerState();
+  const { playerId, status } = await fetchPlayerState();
   if (!playerId) return redirectTo("/lobby");
-
-  if (status === "room" && room.state === "playing") return redirectTo("/");
-  return false; // queued or room-not-playing -> waiting page is correct
-}
-
-async function guardGame() {
-  const { playerId, status, room } = await fetchPlayerState();
-  if (!playerId) return redirectTo("/lobby");
-
-  const isPlaying = status === "room" && room.state === "playing";
-  if (!isPlaying) return redirectTo("/waiting");
+  if (status === "room") return redirectTo("/");
   return false;
 }
+// async function guardWaiting() {
+//   const { playerId, status, room } = await fetchPlayerState();
+//   if (!playerId) return redirectTo("/lobby");
+
+//   if (status === "room" && room.state === "playing") return redirectTo("/");
+//   return false; // queued or room-not-playing -> waiting page is correct
+// }
+
+async function guardGame() {
+  const { playerId, status } = await fetchPlayerState();
+  if (!playerId) return redirectTo("/lobby");
+  if (status !== "room") return redirectTo("/waiting");
+  return false;
+}
+// async function guardGame() {
+//   const { playerId, status, room } = await fetchPlayerState();
+//   if (!playerId) return redirectTo("/lobby");
+
+//   const isPlaying = status === "room" && room.state === "playing";
+//   if (!isPlaying) return redirectTo("/waiting");
+//   return false;
+// }
+
+
+
 
 // **********************************************************************
 

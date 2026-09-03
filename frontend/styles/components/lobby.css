@@ -62,3 +62,15 @@
 .nickname-form button:hover {
     background-color: #1d4ed8;
 }
+
+/*****************************/
+
+.lobby-error {
+    box-sizing: border-box;
+    margin-bottom: 20px;
+    border: 2px solid #dc2626;
+    background-color: #fca5a5;
+    color: #0f172a;
+    display: none;
+    justify-content: center;
+}

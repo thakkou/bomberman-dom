@@ -56,11 +56,8 @@ export default function Game() {
                 "div",
                 { class: "border-line" },
                 {},
-                createElement(
-                    "div",
-                    { class: "map-game", id: "map-game" },
-                    {},
-                ),
+                createElement("div", { class: "map-game", id: "map-game", style: "display:none;" }, {}),
+                createElement("div", { class: "start-countdown", id: "start-countdown" }, {}, "Get ready...")
             ),
         ),
     );

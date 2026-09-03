@@ -1,7 +1,7 @@
 import * as state from "../engine/globals.js";
 import * as bman from "../engine/functions.js";
 import * as json from "../json.js";
-import { broadcastToRoom, broadcastQueuePositions } from "../wsManager.js";
+import { broadcastGameUpdate, broadcastOpponentsLeft, broadcastQueuePositions } from "../wsManager.js";
 import * as matchmaking from "../engine/matchmaking.js";
 
 export function registerPlayerRoutes(route) {
@@ -121,7 +121,6 @@ function handleLeavePlayer(req, res, { params }) {
     const player = bman.getPlayer(playerId);
     if (!player) { json.sendError(res, 404, "Player not found."); return; }
 
-    // Player is waiting
     const queueIndex = state.waitingQueue.indexOf(playerId);
     if (queueIndex !== -1) {
         state.waitingQueue.splice(queueIndex, 1);
@@ -131,29 +130,36 @@ function handleLeavePlayer(req, res, { params }) {
         return;
     }
 
-    if (matchmaking.onLockedPlayerLeft(playerId)) {
-        state.players.delete(playerId);
-        json.sendJson(res, 200, { success: true });
-        return;
-    }
-
-    // Player is inside a room
     const roomId = state.playerRooms.get(playerId);
     if (roomId) {
         const room = bman.getRoom(roomId);
+        state.playerRooms.delete(playerId);
+        state.players.delete(playerId);
+
         if (room) {
             const index = room.players.indexOf(playerId);
             if (index !== -1) room.players.splice(index, 1);
-            if (room.players.length === 0) state.rooms.delete(roomId);
-            else broadcastToRoom(room); // let remaining players see the updated count
+            if (room.game?.players) delete room.game.players[playerId];
+
+            if (room.players.length === 0) {
+                if (room.countdownTimer) clearTimeout(room.countdownTimer);
+                state.rooms.delete(room.id);
+            } else if (room.players.length === 1 && room.state !== "finished") {
+                const lastPlayerId = room.players[0];
+                if (room.countdownTimer) clearTimeout(room.countdownTimer);
+                broadcastOpponentsLeft(lastPlayerId);
+                state.playerRooms.delete(lastPlayerId);
+                state.players.delete(lastPlayerId);
+                state.rooms.delete(room.id);
+            } else {
+                broadcastGameUpdate(room);
+            }
         }
-        state.playerRooms.delete(playerId);
-        state.players.delete(playerId);
+
         json.sendJson(res, 200, { success: true, roomId });
         return;
     }
 
-    // Player exists but isn't queued or in a room.
     state.players.delete(playerId);
     json.sendJson(res, 200, { success: true });
 }

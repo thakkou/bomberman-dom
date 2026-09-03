@@ -7,6 +7,7 @@ export default function Lobby() {
         {},
         createElement("h1", { class: "lobby-title" }, {}, "BOMBERMAN"),
         createElement("p", { class: "lobby-subtitle" }, {}, "Enter your nickname to join the game."),
+        createElement("p", { class: "lobby-error", id: "lobby-error", "aria-live": "polite" }, {}, ""),
         createElement(
             "form",
             { class: "nickname-form", id: "nickname-form" }, // action/method removed, id added
@@ -28,7 +29,6 @@ export default function Lobby() {
                 {}
             ),
             createElement("button", { type: "submit" }, {}, "Join Game"),
-            createElement("p", { class: "lobby-error", id: "lobby-error", "aria-live": "polite" }, {}, "")
         ),
     );
 }

@@ -4,7 +4,8 @@ import * as state from "./engine/globals.js";
 
 import { movePlayer, placeBomb, explodeBomb, clearExplosion, checkWinner, serializeGame } from "./engine/gameState.js";
 import { EXPLOSION_TIME } from "./engine/config.js";
-import { getMatchmakingStatusFor } from "./engine/matchmaking.js";
+import { getQueueTimerStatus } from "./engine/matchmaking.js";
+// import { getMatchmakingStatusFor } from "./engine/matchmaking.js";
 // wsManager.js and matchmaking.js now import each other — that's fine in ES modules as long as neither calls the other at the top level (they don't; every call happens inside a function body).
 
 const sockets = new Map(); // playerId -> ws
@@ -66,18 +67,18 @@ function send(playerId, payload) {
     // console.log(`[ws] sent to ${playerId}:`, payload);
 }
 
-export function broadcastToRoom(room) {
-    const payload = {
-        type: "room_update",
-        room: {
-            id: room.id,
-            state: room.state,
-            playerCount: room.players.length,
-            players: bman.getRoomPlayers(room),
-        },
-    };
-    for (const playerId of room.players) send(playerId, payload);
-}
+// export function broadcastToRoom(room) {
+//     const payload = {
+//         type: "room_update",
+//         room: {
+//             id: room.id,
+//             state: room.state,
+//             playerCount: room.players.length,
+//             players: bman.getRoomPlayers(room),
+//         },
+//     };
+//     for (const playerId of room.players) send(playerId, payload);
+// }
 
 export function broadcastQueuePositions(playerIds) {
     for (const playerId of playerIds) {
@@ -92,14 +93,13 @@ function sendCurrentStatus(playerId) {
     const roomId = state.playerRooms.get(playerId);
     if (roomId) {
         const room = bman.getRoom(roomId);
-        if (room) room.game ? broadcastGameUpdate(room) : broadcastToRoom(room);
+        if (room) broadcastGameUpdate(room);
         return;
     }
 
     broadcastQueuePositions([playerId]);
-    const { queueEndsAt, countdownEndsAt } = getMatchmakingStatusFor(playerId);
-    if (countdownEndsAt) send(playerId, { type: "countdown", endsAt: countdownEndsAt });
-    else if (queueEndsAt) send(playerId, { type: "queue_timer", endsAt: queueEndsAt });
+    const { queueEndsAt } = getQueueTimerStatus();
+    if (queueEndsAt) send(playerId, { type: "queue_timer", endsAt: queueEndsAt }); // import queueEndsAt getter, see below
 }
 
 // -------------------------------
@@ -140,8 +140,17 @@ function maybeEndGame(room) {
 }
 
 export function broadcastGameUpdate(room) {
-    const payload = { type: "game_update", game: serializeGame(room.game), roomState: room.state };
+    const payload = {
+        type: "game_update",
+        game: serializeGame(room.game),
+        roomState: room.state,
+        countdownEndsAt: room.state === "starting" ? room.countdownEndsAt : undefined,
+    };
     for (const playerId of room.players) send(playerId, payload);
+}
+
+export function broadcastOpponentsLeft(playerId) {
+    send(playerId, { type: "opponents_left" });
 }
 
 // timers

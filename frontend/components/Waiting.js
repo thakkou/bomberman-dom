@@ -25,6 +25,6 @@ export default function Waiting() {
             // createElement("span", {}, {}, "4 players"),
             // " have joined."
         ),
-        createElement("button", { id: "leave-waiting", type: "button" }, {}, "Leave")
+        createElement("button", { id: "leave-waiting", class: "btn-leave", type: "button" }, {}, "Leave")
     );
 }
