@@ -3,15 +3,21 @@ import * as bman from "./engine/functions.js";
 import * as state from "./engine/globals.js";
 
 import { movePlayer, placeBomb, explodeBomb, clearExplosion, checkWinner, serializeGame } from "./engine/gameState.js";
-import { EXPLOSION_TIME } from "./engine/config.js";
+import { EXPLOSION_TIME, WS_MAX_PAYLOAD_BYTES } from "./engine/config.js";
 import { getQueueTimerStatus } from "./engine/matchmaking.js";
 // import { getMatchmakingStatusFor } from "./engine/matchmaking.js";
 // wsManager.js and matchmaking.js now import each other — that's fine in ES modules as long as neither calls the other at the top level (they don't; every call happens inside a function body).
 
+import { sanitizeMessage, isRateLimited, clearRateLimit, appendToHistory } from "./engine/chat.js";
+
 const sockets = new Map(); // playerId -> ws
 
 export function createWebSocketServer(httpServer) {
-    const wss = new WebSocketServer({ server: httpServer, path: "/ws" });
+    const wss = new WebSocketServer({
+        server: httpServer,
+        path: "/ws",
+        maxPayload: WS_MAX_PAYLOAD_BYTES, // ws auto-closes (code 1009) anything larger, before parsing
+    });
     // { server: httpServer, path: "/ws" } tells ws to hook into your existing http.Server's upgrade event automatically, scoped to /ws — no manual handshake code needed, and requests to other paths are left alone.
 
     wss.on("connection", (ws, req) => {
@@ -40,7 +46,7 @@ export function createWebSocketServer(httpServer) {
 
         sendCurrentStatus(playerId); // push current state immediately on connect
 
-        ws.on("close", () => sockets.delete(playerId));
+        ws.on("close", () => { sockets.delete(playerId); clearRateLimit(playerId); });
         ws.on("error", () => sockets.delete(playerId));
     });
 
@@ -93,7 +99,10 @@ function sendCurrentStatus(playerId) {
     const roomId = state.playerRooms.get(playerId);
     if (roomId) {
         const room = bman.getRoom(roomId);
-        if (room) broadcastGameUpdate(room);
+        if (room) {
+            broadcastGameUpdate(room);
+            if (room.chat?.length) send(playerId, { type: "chat_history", messages: room.chat });
+        }
         return;
     }
 
@@ -106,7 +115,37 @@ function sendCurrentStatus(playerId) {
 // game functions
 // ------------------------------
 
+function handleChatMessage(playerId, msg) {
+    const roomId = state.playerRooms.get(playerId);
+    const room = roomId && bman.getRoom(roomId);
+    if (!room) return; // chat only exists once you're actually in a room
+
+    if (isRateLimited(playerId)) {
+        send(playerId, { type: "chat_error", error: "You're sending messages too fast." });
+        return;
+    }
+
+    const text = sanitizeMessage(msg.text);
+    if (!text) {
+        send(playerId, { type: "chat_error", error: "Message is empty or too long." });
+        return;
+    }
+
+    const player = bman.getPlayer(playerId);
+    const chatMessage = { playerId, nickname: player?.nickname ?? "Unknown", text, sentAt: Date.now() };
+
+    appendToHistory(room, chatMessage);
+    broadcastChatMessage(room, chatMessage);
+}
+
+export function broadcastChatMessage(room, chatMessage) {
+    const payload = { type: "chat_message", message: chatMessage };
+    for (const playerId of room.players) send(playerId, payload);
+}
+
 function handleGameMessage(playerId, msg) {
+    if (msg.type === "chat") { handleChatMessage(playerId, msg); return; }
+
     const roomId = state.playerRooms.get(playerId);
     const room = roomId && bman.getRoom(roomId);
     if (!room || room.state !== "playing" || !room.game) return;

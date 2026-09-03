@@ -21,3 +21,10 @@ export const WALLS = new Set([
     96, 98, 100, 102, 104, 106, 108, 110, 112, 134, 136, 138, 140, 142, 144,
     146, 148, 150, 172, 174, 176, 178, 180, 182, 184, 186, 188,
 ]);
+
+// CHAT
+export const CHAT_MAX_LENGTH = 300;
+export const CHAT_HISTORY_LIMIT = 50;
+export const CHAT_RATE_LIMIT = 5; // messages
+export const CHAT_RATE_WINDOW_MS = 5000; // per this many ms
+export const WS_MAX_PAYLOAD_BYTES = 4 * 1024; // reject oversized frames before they're even parsed

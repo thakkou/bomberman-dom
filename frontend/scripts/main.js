@@ -11,6 +11,7 @@ import NotFound from "../components/NotFound.js";
 import * as api from "./api.js";
 import { connectWebSocket, closeWebSocket } from "./ws.js";
 import { startGame, onGameUpdate, stopGame } from "./game.js";
+import { wireChat, renderChatHistory, appendChatMessage, showChatError } from "./chat.js";
 
 const router = Router();
 
@@ -41,6 +42,7 @@ router.addRoute({
     stopWaitingTimers();
     patchDOM(router);
     startGame();
+    wireChat();
     connectWebSocket(sessionStorage.getItem("bomberman:playerId"), {
       // ...existing handlers from wireWaiting stay for the waiting page only...
       onGameUpdate: (game, roomState, countdownEndsAt) => onGameUpdate(game, roomState, countdownEndsAt),
@@ -50,6 +52,9 @@ router.addRoute({
         sessionStorage.setItem("bomberman:opponentsLeft", "1");
         window.location.href = "/#/lobby";
       },
+      onChatMessage: (message) => appendChatMessage(message),
+      onChatHistory: (messages) => renderChatHistory(messages),
+      onChatError: (error) => showChatError(error),
     });
   },
   component: () => App(Game(), Chat()),

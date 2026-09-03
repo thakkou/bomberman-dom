@@ -32,6 +32,10 @@ export function connectWebSocket(playerId, handlers = {}) {
         if (payload.type === "countdown") handlers.onCountdown?.(payload.endsAt);
         if (payload.type === "timer_cancelled") handlers.onTimerCancelled?.(payload.timer);
         if (payload.type === "opponents_left") handlers.onOpponentsLeft?.();
+
+        if (payload.type === "chat_message") handlers.onChatMessage?.(payload.message);
+        if (payload.type === "chat_history") handlers.onChatHistory?.(payload.messages);
+        if (payload.type === "chat_error") handlers.onChatError?.(payload.error);
     });
 
     return socket;
@@ -44,6 +48,10 @@ export function sendGameAction(action) {
 export function closeWebSocket() {
     if (socket && socket.readyState === WebSocket.OPEN) socket.close();
     socket = null;
+}
+
+export function sendChatMessage(text) {
+    if (socket && socket.readyState === WebSocket.OPEN) socket.send(JSON.stringify({ type: "chat", text }));
 }
 
 // window.addEventListener("beforeunload", closeWebSocket);
