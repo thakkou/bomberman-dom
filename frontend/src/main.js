@@ -1,44 +1,68 @@
+"use strict";
+
 import Router from "mini-framework/src/router.js";
 import { patchDOM } from "mini-framework/src/vdom/index.js";
 
-import App from "../components/App.js";
-import Lobby from "../components/Lobby.js";
-import Waiting from "../components/Waiting.js";
-import Game from "../components/Game.js";
-import Chat from "../components/Chat.js";
-import NotFound from "../components/NotFound.js";
+import App from "./components/App.js";
+import Lobby from "./components/Lobby.js";
+import Waiting from "./components/Waiting.js";
+import Game from "./components/Game.js";
+import Chat from "./components/Chat.js";
+import NotFound from "./components/NotFound.js";
 
-import * as api from "./api.js";
-import { connectWebSocket, closeWebSocket } from "./ws.js";
-import { startGame, onGameUpdate, stopGame } from "./game.js";
-import { wireChat, renderChatHistory, appendChatMessage, showChatError } from "./chat.js";
+import * as api from "./services/api.js";
+import { connectWebSocket, closeWebSocket } from "./services/ws.js";
+import { startGame, onGameUpdate, stopGame } from "./scripts/game.js";
+import { wireChat, renderChatHistory, appendChatMessage, showChatError } from "./scripts/chat.js";
 
-const router = Router();
+export const router = Router();
 
 router.addRoute({
   path: "/lobby",
   handler: async () => {
-    if (await guardLobby()) return;
     patchDOM(router);
     wireLobby();
   },
   component: () => App(Lobby()),
+  guard: async () => {
+    const { playerId, status } = await fetchPlayerState();
+    if (!playerId) return false;
+    return router.navigate(status === "room" ? "/" : "/waiting"); // navigates 2 times
+  }
+  // async function guardLobby() {
+  //   const { playerId, status, room } = await fetchPlayerState();
+  //   if (!playerId) return false; // no session -> lobby is correct, let it render
+
+  //   if (status === "room" && room.state === "playing") return router.navigate("/");
+  //   return router.navigate("/waiting"); // still queued, or in a room that hasn't started
+  // }
 });
 
 router.addRoute({
   path: "/waiting",
   handler: async () => {
-    if (await guardWaiting()) return;
     patchDOM(router);
     wireWaiting();
   },
   component: () => App(Waiting()),
+  guard: async () => {
+    const { playerId, status } = await fetchPlayerState();
+    if (!playerId) return router.navigate("/lobby");
+    if (status === "room") return router.navigate("/");
+    return false;
+  }
+  // async function guardWaiting() {
+  //   const { playerId, status, room } = await fetchPlayerState();
+  //   if (!playerId) return router.navigate("/lobby");
+
+  //   if (status === "room" && room.state === "playing") return router.navigate("/");
+  //   return false; // queued or room-not-playing -> waiting page is correct
+  // }
 });
 
 router.addRoute({
   path: "/",
   handler: async () => {
-    if (await guardGame()) return;
     stopWaitingTimers();
     patchDOM(router);
     startGame();
@@ -50,7 +74,7 @@ router.addRoute({
         closeWebSocket();
         sessionStorage.removeItem("bomberman:playerId"); // keep nickname for prefill
         sessionStorage.setItem("bomberman:opponentsLeft", "1");
-        window.location.href = "/#/lobby";
+        router.navigate("/lobby");
       },
       onChatMessage: (message) => appendChatMessage(message),
       onChatHistory: (messages) => renderChatHistory(messages),
@@ -58,6 +82,20 @@ router.addRoute({
     });
   },
   component: () => App(Game(), Chat()),
+  guard: async () => {
+    const { playerId, status } = await fetchPlayerState();
+    if (!playerId) return router.navigate("/lobby");
+    if (status !== "room") return router.navigate("/waiting");
+    return false;
+  }
+  // async function guardGame() {
+  //   const { playerId, status, room } = await fetchPlayerState();
+  //   if (!playerId) return router.navigate("/lobby");
+
+  //   const isPlaying = status === "room" && room.state === "playing";
+  //   if (!isPlaying) return router.navigate("/waiting");
+  //   return false;
+  // }
 });
 
 router.addRoute({
@@ -66,6 +104,7 @@ router.addRoute({
     patchDOM(router);
   },
   component: () => App(NotFound()),
+  // guard ?!
 });
 
 router.init();
@@ -88,26 +127,6 @@ function wireLobby() {
     errorEl.style.display = 'flex';
     errorEl.textContent = "All other players left the game.";
   }
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault();
-
-    const input = document.getElementById("nickname");
-    const errorEl = document.getElementById("lobby-error");
-    const nickname = input.value.trim();
-    errorEl.textContent = "";
-    errorEl.style.display = 'none';
-
-    try {
-      const data = await api.joinQueue(nickname);
-      sessionStorage.setItem("bomberman:playerId", data.player.id);
-      sessionStorage.setItem("bomberman:nickname", nickname);
-      window.location.href = "/#/waiting"; // use navigate or href
-    } catch (err) {
-      errorEl.style.display = 'flex';
-      errorEl.textContent = err.message;
-    }
-  });
 }
 
 // --- Waiting room polling -----------------------------------------
@@ -116,7 +135,10 @@ let tickHandle = null;
 
 function wireWaiting() {
   const playerId = sessionStorage.getItem("bomberman:playerId");
-  if (!playerId) { window.location.href = "/#/lobby"; return; }
+  if (!playerId) {
+    router.navigate("/lobby");
+    return;
+  }
 
   connectWebSocket(playerId, {
     onRoomUpdate: (room) => updateWaitingUI(room.playerCount),
@@ -126,10 +148,10 @@ function wireWaiting() {
       //   document.getElementById("queue-timer").textContent = "";
       //   startTimerDisplay("countdown-timer", endsAt, "Game starts in");
       // },
-    onGameUpdate: () => { stopWaitingTimers(); setTimeout(() => redirectTo("/"), 200); }, // fires on "starting" now — redirect immediately
-    // onGameUpdate: () => {
-    //   setTimeout(() => redirectTo("/"), 300);
-    // }, // countdown hit 0, room started
+    onGameUpdate: () => {
+      stopWaitingTimers();
+      setTimeout(() => router.navigate("/"), 200);
+    }, // fires on "starting" now — redirect immediately
     onTimerCancelled: (timer) => {
       if (tickHandle) clearInterval(tickHandle);
       const elementId = timer === "countdown" ? "countdown-timer" : "queue-timer";
@@ -145,7 +167,7 @@ function wireWaiting() {
     if (playerId) await api.leaveQueue(playerId).catch(() => {});
     sessionStorage.removeItem("bomberman:playerId");
     sessionStorage.removeItem("bomberman:nickname");
-    window.location.href = "/#/lobby";
+    router.navigate("/lobby");
   });
 }
 
@@ -176,21 +198,11 @@ function stopWaitingTimers() {
   document.getElementById("leave-waiting")?.remove();
 }
 
-// --- Route guards ---------------------------------------------------
-
-function redirectTo(path) {
-  // console.log(window.location.pathname)
-  if (window.location.hash !== path) {
-    window.location.href = "/#" + path;
-    return true;
-  }
-  return false;
-}
 
 async function fetchPlayerState() {
   const playerId = sessionStorage.getItem("bomberman:playerId");
   if (!playerId) return { playerId: null };
-
+  
   try {
     const data = await api.getPlayerStatus(playerId);
     return { playerId, ...data }; // { playerId, status, room?, queuePosition? }
@@ -201,51 +213,6 @@ async function fetchPlayerState() {
     return { playerId: null };
   }
 }
-
-async function guardLobby() {
-  const { playerId, status } = await fetchPlayerState();
-  if (!playerId) return false;
-  return redirectTo(status === "room" ? "/" : "/waiting");
-}
-// async function guardLobby() {
-//   const { playerId, status, room } = await fetchPlayerState();
-//   if (!playerId) return false; // no session -> lobby is correct, let it render
-
-//   if (status === "room" && room.state === "playing") return redirectTo("/");
-//   return redirectTo("/waiting"); // still queued, or in a room that hasn't started
-// }
-
-async function guardWaiting() {
-  const { playerId, status } = await fetchPlayerState();
-  if (!playerId) return redirectTo("/lobby");
-  if (status === "room") return redirectTo("/");
-  return false;
-}
-// async function guardWaiting() {
-//   const { playerId, status, room } = await fetchPlayerState();
-//   if (!playerId) return redirectTo("/lobby");
-
-//   if (status === "room" && room.state === "playing") return redirectTo("/");
-//   return false; // queued or room-not-playing -> waiting page is correct
-// }
-
-async function guardGame() {
-  const { playerId, status } = await fetchPlayerState();
-  if (!playerId) return redirectTo("/lobby");
-  if (status !== "room") return redirectTo("/waiting");
-  return false;
-}
-// async function guardGame() {
-//   const { playerId, status, room } = await fetchPlayerState();
-//   if (!playerId) return redirectTo("/lobby");
-
-//   const isPlaying = status === "room" && room.state === "playing";
-//   if (!isPlaying) return redirectTo("/waiting");
-//   return false;
-// }
-
-
-
 
 // **********************************************************************
 

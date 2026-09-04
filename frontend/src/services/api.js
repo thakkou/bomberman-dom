@@ -1,3 +1,5 @@
+"use strict";
+
 const API_BASE = "http://localhost:8080";
 
 async function request(path, options = {}) {
@@ -27,8 +29,4 @@ export function getPlayerStatus(playerId) {
 
 export function leaveQueue(playerId) {
     return request(`/api/players/${playerId}`, { method: "DELETE" });
-}
-
-export function startRoom(roomId) {
-    return request(`/api/rooms/${roomId}/start`, { method: "POST" });
 }

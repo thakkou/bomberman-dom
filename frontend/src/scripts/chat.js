@@ -1,6 +1,6 @@
 "use strict";
 
-import { sendChatMessage } from "./ws.js";
+import { sendChatMessage } from "../services/ws.js";
 
 const MAX_LENGTH = 300;
 

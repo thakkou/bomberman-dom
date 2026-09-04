@@ -1,7 +1,7 @@
 import * as state from "../engine/globals.js";
 import * as bman from "../engine/functions.js";
 import * as json from "../json.js";
-import { broadcastGameUpdate, broadcastOpponentsLeft, broadcastQueuePositions } from "../wsManager.js";
+import { broadcastGameUpdate, broadcastOpponentsLeft, broadcastQueuePositions } from "../services/wsManager.js";
 import * as matchmaking from "../engine/matchmaking.js";
 
 export function registerPlayerRoutes(route) {

@@ -1,4 +1,29 @@
+"use strict";
+
 import { createElement } from "mini-framework/src/vdom/index.js";
+
+import { joinQueue } from "../services/api.js";
+import { router } from "../main.js";
+
+async function joinGame(event) {
+    event.preventDefault();
+
+    const input = document.getElementById("nickname");
+    const errorEl = document.getElementById("lobby-error");
+    const nickname = input.value.trim();
+    errorEl.textContent = "";
+    errorEl.style.display = 'none';
+
+    try {
+        const data = await joinQueue(nickname);
+        sessionStorage.setItem("bomberman:playerId", data.player.id);
+        sessionStorage.setItem("bomberman:nickname", nickname);
+        router.navigate("/waiting");
+    } catch (err) {
+        errorEl.style.display = 'flex';
+        errorEl.textContent = err.message;
+    }
+}
 
 export default function Lobby() {
     return createElement(
@@ -11,7 +36,7 @@ export default function Lobby() {
         createElement(
             "form",
             { class: "nickname-form", id: "nickname-form" }, // action/method removed, id added
-            {},
+            { submit: joinGame },
             createElement("label", { for: "nickname" }, {}, "Nickname"),
             createElement(
                 "input",

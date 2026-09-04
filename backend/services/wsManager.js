@@ -1,14 +1,15 @@
 import { WebSocketServer } from "ws";
-import * as bman from "./engine/functions.js";
-import * as state from "./engine/globals.js";
 
-import { movePlayer, placeBomb, explodeBomb, clearExplosion, checkWinner, serializeGame } from "./engine/gameState.js";
-import { EXPLOSION_TIME, WS_MAX_PAYLOAD_BYTES } from "./engine/config.js";
-import { getQueueTimerStatus } from "./engine/matchmaking.js";
+import * as bman from "../engine/functions.js";
+import * as state from "../engine/globals.js";
+
+import { movePlayer, placeBomb, explodeBomb, clearExplosion, checkWinner, serializeGame } from "../engine/gameState.js";
+import { EXPLOSION_TIME, WS_MAX_PAYLOAD_BYTES } from "../engine/config.js";
+import { getQueueTimerStatus } from "../engine/matchmaking.js";
 // import { getMatchmakingStatusFor } from "./engine/matchmaking.js";
 // wsManager.js and matchmaking.js now import each other — that's fine in ES modules as long as neither calls the other at the top level (they don't; every call happens inside a function body).
 
-import { sanitizeMessage, isRateLimited, clearRateLimit, appendToHistory } from "./engine/chat.js";
+import { sanitizeMessage, isRateLimited, clearRateLimit, appendToHistory } from "../engine/chat.js";
 
 const sockets = new Map(); // playerId -> ws
 

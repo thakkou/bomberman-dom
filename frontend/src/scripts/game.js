@@ -1,7 +1,7 @@
 "use strict";
 
-import { getConfig } from "./api.js";
-import { sendGameAction } from "./ws.js";
+import { getConfig } from "../services/api.js";
+import { sendGameAction } from "../services/ws.js";
 
 const config = await getConfig();
 const myPlayerId = sessionStorage.getItem("bomberman:playerId");

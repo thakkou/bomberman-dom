@@ -1,14 +1,14 @@
 import http from "node:http";
 
 // Routing
-import { createRouter } from "./router.js";
+import { createRouter } from "./services/router.js";
 import { registerHealthRoutes } from "./routes/health.js";
 import { registerConfigRoutes } from "./routes/config.js";
 import { registerPlayerRoutes } from "./routes/players.js";
 import { registerRoomRoutes } from "./routes/rooms.js";
 
 import * as json from "./json.js";
-import { createWebSocketServer } from "./wsManager.js";
+import { createWebSocketServer } from "./services/wsManager.js";
 
 const HOST = "0.0.0.0";
 const PORT = 8080;

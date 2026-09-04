@@ -2,7 +2,7 @@ import * as state from "./globals.js";
 import * as conf from "./config.js";
 import { createRoom } from "./functions.js";
 import { createGameState } from "./gameState.js";
-import { broadcastQueueTimer, broadcastTimerCancelled, broadcastGameUpdate } from "../wsManager.js";
+import { broadcastQueueTimer, broadcastTimerCancelled, broadcastGameUpdate } from "../services/wsManager.js";
 
 let queueTimer = null;
 let queueEndsAt = null;
