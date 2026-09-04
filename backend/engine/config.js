@@ -28,3 +28,17 @@ export const CHAT_HISTORY_LIMIT = 50;
 export const CHAT_RATE_LIMIT = 5; // messages
 export const CHAT_RATE_WINDOW_MS = 5000; // per this many ms
 export const WS_MAX_PAYLOAD_BYTES = 4 * 1024; // reject oversized frames before they're even parsed
+
+
+// power-up + movement tuning
+
+export const POWERUP_DROP_CHANCE = 0.3; // 30% chance a destroyed box drops one
+export const POWERUP_TYPES = ["bombs", "flames", "speed"];
+
+export const MAX_BOMBS_CAP = 8;
+export const MAX_BLAST_RANGE_CAP = 8;
+export const MAX_SPEED_LEVEL = 5;
+
+export const BASE_MOVE_COOLDOWN_MS = 220; // ms between moves at speedLevel 0
+export const SPEED_COOLDOWN_STEP_MS = 30; // cooldown reduction per speed level
+export const MIN_MOVE_COOLDOWN_MS = 80;   // floor so speed can't go infinite

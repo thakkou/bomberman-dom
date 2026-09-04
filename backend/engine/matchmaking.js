@@ -1,6 +1,6 @@
 import * as state from "./globals.js";
 import * as conf from "./config.js";
-import { createRoom } from "./functions.js";
+import { createRoom, getPlayer } from "./functions.js";
 import { createGameState } from "./gameState.js";
 import { broadcastQueueTimer, broadcastTimerCancelled, broadcastGameUpdate } from "../services/wsManager.js";
 
@@ -45,7 +45,11 @@ function cancelQueueTimer() {
 function lockAndCreateRoom(playerIds) {
     const room = createRoom(playerIds);
     room.state = "starting";
-    room.game = createGameState(playerIds);        // map/spawns ready immediately
+
+    const nicknames = Object.fromEntries(
+        playerIds.map(id => [id, getPlayer(id)?.nickname ?? "Player"])
+    );
+    room.game = createGameState(playerIds, nicknames);
     room.countdownEndsAt = Date.now() + conf.COUNTDOWN_MS;
 
     state.rooms.set(room.id, room);

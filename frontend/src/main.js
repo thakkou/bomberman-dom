@@ -84,6 +84,7 @@ router.addRoute({
   component: () => App(Game(), Chat()),
   guard: async () => {
     const { playerId, status } = await fetchPlayerState();
+    console.log(playerId)
     if (!playerId) return router.navigate("/lobby");
     if (status !== "room") return router.navigate("/waiting");
     return false;

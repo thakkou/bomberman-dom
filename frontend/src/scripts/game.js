@@ -7,6 +7,7 @@ const config = await getConfig();
 const myPlayerId = sessionStorage.getItem("bomberman:playerId");
 
 const MOVE_DURATION = 150;
+const POWERUP_ICONS = { bombs: "💣+", flames: "🔥+", speed: "⚡" };
 
 let latestGame = null;
 let renderedGame = null;
@@ -76,16 +77,26 @@ function queueMove(playerId, index, size) {
 // --- state -> DOM, only when new data arrived (called from the rAF loop) ---
 
 function renderStaticCells(game) {
+  const powerupAt = new Map(game.powerups.map(p => [p.position, p.type]));
+
   for (let index = 0; index < config.BOARD_SIZE; index++) {
     const cube = document.getElementById(`cube-${index}`);
     const isBox = game.boxes.includes(index);
     const isBomb = game.bombs.includes(index);
     const isExplosion = game.explosions.includes(index);
+    const powerupType = powerupAt.get(index);
 
     cube.classList.toggle("box", isBox);
     cube.classList.toggle("bomb", isBomb);
     cube.classList.toggle("explosion", isExplosion);
-    cube.textContent = isExplosion ? "💥" : isBomb ? "💣" : isBox ? "Box" : "";
+    cube.classList.toggle("powerup", Boolean(powerupType) && !isExplosion);
+    cube.dataset.powerup = powerupType ?? "";
+
+    cube.textContent = isExplosion ? "💥"
+      : isBomb ? "💣"
+        : isBox ? "Box"
+          : powerupType ? POWERUP_ICONS[powerupType]
+            : "";
   }
 }
 
@@ -102,13 +113,43 @@ function renderPlayers(game, size) {
 }
 
 function renderHUD(game) {
-  const me = game.players[myPlayerId];
-  if (me) {
-    document.getElementById("lives").textContent = me.lives;
-    document.getElementById("score").textContent = me.score;
-  }
+  const hudContainer = document.getElementById("hud-players");
+  if (!hudContainer) return;
+
+  hudContainer.replaceChildren();
+
+  Object.entries(game.players).forEach(([playerId, player], i) => {
+    const row = document.createElement("div");
+    row.className = `hud-player player-${i}`;
+    if (playerId === myPlayerId) row.classList.add("hud-player-me");
+    if (!player.alive) row.classList.add("hud-player-dead");
+
+    const name = document.createElement("span");
+    name.className = "hud-name";
+    name.textContent = playerId === myPlayerId ? "You" : player.nickname;
+
+    const lives = document.createElement("span");
+    lives.className = "hud-lives";
+    lives.textContent = "❤".repeat(Math.max(0, player.lives));
+
+    const score = document.createElement("span");
+    score.className = "hud-score";
+    score.textContent = `${player.score} pts`;
+
+    row.append(name, lives, score);
+
+    if (playerId === myPlayerId) {
+      const powerups = document.createElement("span");
+      powerups.className = "hud-powerups";
+      powerups.textContent = `💣×${player.maxBombs}  🔥${player.blastRange}  ⚡${player.speedLevel}`;
+      row.appendChild(powerups);
+    }
+
+    hudContainer.appendChild(row);
+  });
 
   const messageEl = document.getElementById("game-message");
+  const me = game.players[myPlayerId];
   if (game.winnerId) {
     messageEl.textContent = game.winnerId === myPlayerId ? "You win!" : "Game over — another player won.";
   } else if (me && !me.alive) {
@@ -120,16 +161,19 @@ function renderHUD(game) {
 
 function tick() {
   if (isDirty && latestGame) {
-    const size = cellSize() + 1; // because of margin ?!
-    // console.log(size)
-    renderStaticCells(latestGame);
-    renderPlayers(latestGame, size);
-    renderHUD(latestGame);
-    renderedGame = latestGame;
-    isDirty = false;
+    try {
+      const size = cellSize() + 1;
+      renderStaticCells(latestGame);
+      renderPlayers(latestGame, size);
+      renderHUD(latestGame);
+      renderedGame = latestGame;
+    } catch (err) {
+      console.error("Render error (skipping this frame):", err);
+    } finally {
+      isDirty = false;
+    }
   }
 
-  // Interpolate token positions every frame, independent of when data arrives.
   for (const [playerId, anim] of playerAnim) {
     const el = playerEls.get(playerId);
     if (!el) continue;
