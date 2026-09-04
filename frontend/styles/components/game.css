@@ -74,3 +74,20 @@
   outline: 2px solid white; 
   border-radius: 50%; 
 }
+
+/***************************/
+
+.cube.powerup[data-powerup="bombs"] {
+  background: #2b2b2b;
+  color: #fff;
+}
+
+.cube.powerup[data-powerup="flames"] {
+  background: #b3312c;
+  color: #fff;
+}
+
+.cube.powerup[data-powerup="speed"] {
+  background: #2fa84f;
+  color: #fff;
+}
