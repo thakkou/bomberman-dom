@@ -3,6 +3,9 @@
 import { getConfig } from "../services/api.js";
 import { sendGameAction } from "../services/ws.js";
 
+import { createElement, renderElement } from "mini-framework/src/vdom/index.js";
+import hudState from "../state/hudState.js";
+
 const config = await getConfig();
 
 const MOVE_DURATION = 150;
@@ -38,7 +41,9 @@ function generateMapCubes() {
 }
 
 function cellSize() {
-  return document.getElementById("cube-0").getBoundingClientRect().width;
+  const cube = document.getElementById("cube-0");
+  if (!cube) { generateMapCubes(); return cellSize(); } // board's missing — rebuild and retry
+  return cube.getBoundingClientRect().width;
 }
 
 function indexToXY(index, size) {
@@ -115,76 +120,54 @@ function renderPlayers(game, size) {
   });
 }
 
-function renderHUD(game) {
-  const hudContainer = document.getElementById("hud-players");
-  if (!hudContainer) return;
+// --- HUD ---
 
-  hudContainer.replaceChildren();
+function HudPlayerRow(playerId, player, i, myPlayerId) {
+  const classes = ["hud-player", `player-${i}`];
+  if (playerId === myPlayerId) classes.push("hud-player-me");
+  if (!player.alive) classes.push("hud-player-dead");
+  return createElement("div", { class: classes.join(" ") }, {},
+    createElement("span", { class: "hud-name" }, {}, playerId === myPlayerId ? "You" : player.nickname),
+    createElement("span", { class: "hud-lives" }, {}, "❤".repeat(Math.max(0, player.lives))),
+    createElement("span", { class: "hud-score" }, {}, `${player.score} pts`),
+  );
+}
 
-  Object.entries(game.players).forEach(([playerId, player], i) => {
-    const row = document.createElement("div");
-    row.className = `hud-player player-${i}`;
-    if (playerId === getMyPlayerId()) row.classList.add("hud-player-me");
-    if (!player.alive) row.classList.add("hud-player-dead");
+function PowerupBadge(icon, value, label) {
+  return createElement("span", { class: "powerup-badge" }, {},
+    createElement("span", { class: "powerup-icon" }, {}, icon),
+    createElement("span", { class: "powerup-value", title: label }, {}, String(value)),
+  );
+}
 
-    const name = document.createElement("span");
-    name.className = "hud-name";
-    name.textContent = playerId === getMyPlayerId() ? "You" : player.nickname;
-
-    const lives = document.createElement("span");
-    lives.className = "hud-lives";
-    lives.textContent = "❤".repeat(Math.max(0, player.lives));
-
-    const score = document.createElement("span");
-    score.className = "hud-score";
-    score.textContent = `${player.score} pts`;
-
-    row.append(name, lives, score);
-    hudContainer.appendChild(row);
-  });
-
-  renderPowerupBar(game.players[getMyPlayerId()]);
-
+function renderHud() {
+  const container = document.getElementById("hud-players");
+  const powerupsContainer = document.getElementById("hud-powerups-bar");
   const messageEl = document.getElementById("game-message");
-  const me = game.players[getMyPlayerId()];
-  if (game.winnerId) {
-    messageEl.textContent = game.winnerId === getMyPlayerId() ? "You win!" : "Game over — another player won.";
-  } else if (me && !me.alive) {
-    messageEl.textContent = "You're out! Spectating the rest of the match.";
+  if (!container) return;
+
+  const { players, myPlayerId, message } = hudState.getState();
+
+  const rows = Object.entries(players).map(([playerId, player], i) =>
+    HudPlayerRow(playerId, player, i, myPlayerId)
+  );
+  renderElement(true, container, ...rows);
+
+  const me = players[myPlayerId];
+  if (powerupsContainer && me) {
+    renderElement(true, powerupsContainer,
+      PowerupBadge("💣", me.maxBombs, "Bombs"),
+      PowerupBadge("🔥", me.blastRange, "Range"),
+      PowerupBadge("⚡", me.speedLevel, "Speed"),
+    );
+  }
+
+  if (messageEl) {
+    messageEl.textContent = message || "Move with Arrow keys or WASD. Drop a bomb with Space.";
   }
 }
 
-function renderPowerupBar(me) {
-  const bar = document.getElementById("hud-powerups-bar");
-  console.log(bar, me)
-  if (!bar || !me) return;
-
-  bar.replaceChildren();
-
-  const badges = [
-    { icon: "💣", label: "Bombs", value: me.maxBombs },
-    { icon: "🔥", label: "Range", value: me.blastRange },
-    { icon: "⚡", label: "Speed", value: me.speedLevel },
-  ];
-
-  for (const { icon, label, value } of badges) {
-    const badge = document.createElement("span");
-    badge.className = "powerup-badge";
-
-    const iconEl = document.createElement("span");
-    iconEl.className = "powerup-icon";
-    iconEl.textContent = icon;
-
-    const valueEl = document.createElement("span");
-    valueEl.className = "powerup-value";
-    valueEl.textContent = value;
-    valueEl.title = label;
-
-    badge.append(iconEl, valueEl);
-    // console.log(badge)
-    bar.appendChild(badge);
-  }
-}
+hudState.subscribe(renderHud);
 
 // --- the animation loop ---
 
@@ -194,7 +177,7 @@ function tick() {
       const size = cellSize() + 1;
       renderStaticCells(latestGame);
       renderPlayers(latestGame, size);
-      renderHUD(latestGame);
+      // renderHUD(latestGame);  <- delete this line
       renderedGame = latestGame;
     } catch (err) {
       console.error("Render error (skipping this frame):", err);
@@ -249,11 +232,25 @@ export function onGameUpdate(game, newRoomState, countdownEndsAt) {
 
   latestGame = game;
   isDirty = true;
+
+  const myPlayerId = getMyPlayerId();
+  const me = game.players[myPlayerId];
+
+  let message = "";
+  if (game.winnerId) {
+    message = game.winnerId === myPlayerId ? "You win!" : "Game over — another player won.";
+  } else if (me && !me.alive) {
+    message = "You're out! Spectating the rest of the match.";
+  }
+
+  hudState.setState({ players: game.players, myPlayerId, message });
 }
 
 export function startGame() {
   roomState = null;
   generateMapCubes();
+  document.getElementById("map-game").style.display = "none";
+  document.getElementById("start-countdown").style.display = "";
   if (!rafId) rafId = requestAnimationFrame(tick);
 
   document.addEventListener("keydown", (event) => {

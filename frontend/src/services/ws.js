@@ -4,6 +4,11 @@ const WS_BASE = "ws://localhost:8080/ws";
 let socket = null;
 
 export function connectWebSocket(playerId, handlers = {}) {
+    if (socket) {
+        socket.close();
+        socket = null;
+    }
+
     socket = new WebSocket(`${WS_BASE}?playerId=${encodeURIComponent(playerId)}`);
 
     socket.addEventListener("open", () => {

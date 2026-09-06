@@ -2,6 +2,10 @@
 
 import Router from "mini-framework/src/router.js";
 import { patchDOM } from "mini-framework/src/vdom/index.js";
+import lobbyState from "./state/lobbyState.js";
+import waitingState from "./state/waitingState.js";
+// import chatState from "./state/chatState.js";
+// import hudState from "./state/hudState.js";
 
 import App from "./components/App.js";
 import Lobby from "./components/Lobby.js";
@@ -13,9 +17,15 @@ import NotFound from "./components/NotFound.js";
 import * as api from "./services/api.js";
 import { connectWebSocket, closeWebSocket } from "./services/ws.js";
 import { startGame, onGameUpdate, stopGame } from "./scripts/game.js";
-import { wireChat, renderChatHistory, appendChatMessage, showChatError } from "./scripts/chat.js";
+
+// CHAT
+import { onChatMessage, onChatHistory, onChatError } from "./scripts/chat.js";
 
 export const router = Router();
+
+[lobbyState, waitingState/*, chatState, hudState*/].forEach(store =>
+  store.subscribe(() => patchDOM(router))
+);
 
 router.addRoute({
   path: "/lobby",
@@ -66,7 +76,7 @@ router.addRoute({
     stopWaitingTimers();
     patchDOM(router);
     startGame();
-    wireChat();
+    // wireChat();
     connectWebSocket(localStorage.getItem("bomberman:playerId"), {
       // ...existing handlers from wireWaiting stay for the waiting page only...
       onGameUpdate: (game, roomState, countdownEndsAt) => onGameUpdate(game, roomState, countdownEndsAt),
@@ -76,9 +86,9 @@ router.addRoute({
         localStorage.setItem("bomberman:opponentsLeft", "1");
         router.navigate("/lobby");
       },
-      onChatMessage: (message) => appendChatMessage(message),
-      onChatHistory: (messages) => renderChatHistory(messages),
-      onChatError: (error) => showChatError(error),
+      onChatMessage: (message) => onChatMessage(message),
+      onChatHistory: (messages) => onChatHistory(messages),
+      onChatError: (error) => onChatError(error),
     });
   },
   component: () => App(Game(), Chat()),
@@ -105,7 +115,6 @@ router.addRoute({
     patchDOM(router);
   },
   component: () => App(NotFound()),
-  // guard ?!
 });
 
 router.init();
@@ -132,72 +141,38 @@ function wireLobby() {
 
 // --- Waiting room polling -----------------------------------------
 
-let tickHandle = null;
+let tickTimer = null;
 
 function wireWaiting() {
-  const playerId = localStorage.getItem("bomberman:playerId");
-  if (!playerId) {
-    router.navigate("/lobby");
-    return;
-  }
-
-  connectWebSocket(playerId, {
-    onRoomUpdate: (room) => updateWaitingUI(room.playerCount),
-    onQueueUpdate: (queuePosition) => updateWaitingUI(queuePosition),
-    onQueueTimer: (endsAt) => startTimerDisplay("queue-timer", endsAt, "Locking in players in"),
-    // onCountdown: (endsAt) => {
-      //   document.getElementById("queue-timer").textContent = "";
-      //   startTimerDisplay("countdown-timer", endsAt, "Game starts in");
-      // },
-    onGameUpdate: () => {
-      stopWaitingTimers();
-      setTimeout(() => router.navigate("/"), 200);
-    }, // fires on "starting" now — redirect immediately
-    onTimerCancelled: (timer) => {
-      if (tickHandle) clearInterval(tickHandle);
-      const elementId = timer === "countdown" ? "countdown-timer" : "queue-timer";
-      const el = document.getElementById(elementId);
-      if (el) el.textContent = "";
-    },
+  connectWebSocket(localStorage.getItem("bomberman:playerId"), {
+    onRoomUpdate: (room) => waitingState.setState({ playerCount: room.playerCount }),
+    onQueueUpdate: (queuePosition) => waitingState.setState({ playerCount: queuePosition }),
+    onQueueTimer: (endsAt) => startTimerDisplay(endsAt, "Locking in players in"),
+    onCountdown: (endsAt) => startTimerDisplay(endsAt, "Game starts in"),
+    onTimerCancelled: () => { clearInterval(tickTimer); waitingState.setState({ secondsLeft: null }); },
+    onGameUpdate: () => { stopWaitingTimers(); setTimeout(() => router.navigate("/"), 200); },
     onError: (err) => console.error("WebSocket error", err),
   });
-
-  document.getElementById("leave-waiting")?.addEventListener("click", async () => {
-    stopWaitingTimers();
-    const playerId = localStorage.getItem("bomberman:playerId");
-    if (playerId) await api.leaveQueue(playerId).catch(() => {});
-    localStorage.removeItem("bomberman:playerId");
-    localStorage.removeItem("bomberman:nickname");
-    router.navigate("/lobby");
-  });
 }
 
-function startTimerDisplay(elementId, endsAt, label) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  if (tickHandle) clearInterval(tickHandle);
-
+function startTimerDisplay(endsAt, timerLabel) {
+  if (tickTimer) clearInterval(tickTimer);
   const tick = () => {
     const secondsLeft = Math.max(0, Math.ceil((endsAt - Date.now()) / 1000));
-    el.textContent = `${label} ${secondsLeft}s`;
-    if (secondsLeft <= 0) clearInterval(tickHandle);
+    waitingState.setState({ timerLabel, secondsLeft });
+    if (secondsLeft <= 0) clearInterval(tickTimer);
   };
   tick();
-  tickHandle = setInterval(tick, 250);
-}
-
-function updateWaitingUI(count) {
-  const countEl = document.getElementById("player-count");
-  if (countEl) countEl.textContent = count;
+  tickTimer = setInterval(tick, 250);
 }
 
 function stopWaitingTimers() {
-  if (tickHandle) clearInterval(tickHandle);
-  tickHandle = null;
-  document.getElementById("queue-timer")?.remove();
-  document.getElementById("countdown-timer")?.remove();
-  document.getElementById("leave-waiting")?.remove();
+  if (tickTimer) clearInterval(tickTimer);
+  tickTimer = null;
+  waitingState.setState({ secondsLeft: null, timerLabel: "" });
 }
+
+// *******************************************************************
 
 
 async function fetchPlayerState() {
@@ -221,17 +196,13 @@ window.addEventListener("pagehide", () => {
   // pagehide over beforeunload: it fires reliably on tab close, back/forward navigation,
   // and mobile Safari (where beforeunload is unreliable)
   closeWebSocket();
+});
 
-  // const playerId = localStorage.getItem("bomberman:playerId");
-  // if (!playerId) return;
+window.addEventListener("storage", (event) => {
+  if (event.key !== "bomberman:playerId" || !event.newValue) return;
 
-  // // fetch is normally cancelled mid-unload; keepalive lets this last request
-  // // finish in the background even after the page has started tearing down.
-  // fetch(`http://localhost:8080/api/players/${playerId}`, {
-  //   method: "DELETE",
-  //   keepalive: true,
-  // }).catch(() => {});
-
-  // localStorage.removeItem("bomberman:playerId");
-  // localStorage.removeItem("bomberman:nickname");
+  const currentPath = location.hash.replace("#", "") || "/lobby";
+  if (currentPath === "/lobby") {
+    router.navigate("/waiting"); // its own guard resolves whether that's really /waiting or /
+  }
 });

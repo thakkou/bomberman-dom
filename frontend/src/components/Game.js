@@ -1,8 +1,11 @@
 "use strict";
 
 import { createElement } from "mini-framework/src/vdom/index.js";
+// import hudState from "../state/hudState.js";
 
 export default function Game() {
+    // const { players, myPlayerId } = hudState.getState();
+
     return createElement(
         "section",
         { class: "main-container", "aria-label": "Bomberman game" },
@@ -27,7 +30,7 @@ export default function Game() {
                 "div",
                 { class: "border-line" },
                 {},
-                createElement("div", { class: "map-game", id: "map-game", style: "display:none;" }, {}),
+                createElement("div", { class: "map-game", id: "map-game" }, {}),
                 createElement("div", { class: "start-countdown", id: "start-countdown" }, {}, "Get ready...")
             ),
         ),
