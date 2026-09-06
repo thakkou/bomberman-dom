@@ -1,0 +1,379 @@
+{
+  "info": {
+    "name": "bomberman-dom • websocket",
+    "description": "WebSocket test requests for the Bomberman backend (ws://localhost:8080/ws). Import alongside your existing HTTP collection.\n\nWorkflow:\n1. Use your HTTP collection's `POST /api/players` to join 2-4 players and grab their `player.id` values.\n2. Paste those ids into the collection variables PLAYER_ID_A / PLAYER_ID_B / PLAYER_ID_C / PLAYER_ID_D below (or via the collection's Variables tab).\n3. Open a request in the 'Connections' folder, hit Connect. Each open request tab is an independent socket - open several tabs of the same connection request to simulate multiple browser tabs for the SAME player.\n4. Once connected, open a request from 'Game Actions' / 'Chat', hit Connect (or reuse an existing tab pointed at the same playerId), then Send - the body is pre-filled with the JSON message.\n\nIMPORTANT: Postman does not send a browser Origin header automatically. Every request here explicitly sets `Origin: http://localhost:3000` so it passes the backend's origin check instead of being rejected with code 4003.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "WS_BASE", "value": "ws://localhost:8080/ws" },
+    { "key": "ALLOWED_ORIGIN", "value": "http://localhost:3000" },
+    { "key": "PLAYER_ID_A", "value": "PASTE_PLAYER_A_ID_HERE" },
+    { "key": "PLAYER_ID_B", "value": "PASTE_PLAYER_B_ID_HERE" },
+    { "key": "PLAYER_ID_C", "value": "PASTE_PLAYER_C_ID_HERE" },
+    { "key": "PLAYER_ID_D", "value": "PASTE_PLAYER_D_ID_HERE" },
+    { "key": "UNKNOWN_PLAYER_ID", "value": "does-not-exist-12345" }
+  ],
+  "item": [
+    {
+      "name": "Connections",
+      "item": [
+        {
+          "name": "Connect - Player A",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "description": "Open multiple tabs of THIS exact request to simulate several browser tabs for the same player (Player A). Every tab should receive every broadcast (game_update, chat_message, etc.) since the backend now tracks a Set of sockets per playerId."
+          },
+          "response": []
+        },
+        {
+          "name": "Connect - Player B",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_B}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_B}}" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Connect - Player C",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_C}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_C}}" }]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Connect - Player D",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_D}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_D}}" }]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Game Actions (Player A)",
+      "item": [
+        {
+          "name": "Move - Up",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"move\",\n  \"direction\": \"up\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Move - Down",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"move\",\n  \"direction\": \"down\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Move - Left",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"move\",\n  \"direction\": \"left\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Move - Right",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"move\",\n  \"direction\": \"right\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Place Bomb",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"bomb\"\n}"
+            },
+            "description": "Send this repeatedly (faster than BOMB_DELAY apart, on the same cell) to verify maxBombs / one-bomb-per-cell limits."
+          },
+          "response": []
+        },
+        {
+          "name": "Move - Invalid Direction (expect no-op)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"move\",\n  \"direction\": \"sideways\"\n}"
+            },
+            "description": "Server should silently ignore this (movePlayer returns false for an unrecognized direction) - no game_update should fire in response."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "item": [
+        {
+          "name": "Send Chat Message",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"chat\",\n  \"text\": \"Hello from Postman!\"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Chat - Too Long (expect chat_error)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"chat\",\n  \"text\": \"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA\"\n}"
+            },
+            "description": "This string is > CHAT_MAX_LENGTH (300). Expect back: { type: 'chat_error', error: 'Message is empty or too long.' } and nothing broadcast to other players."
+          },
+          "response": []
+        },
+        {
+          "name": "Chat - Empty (expect chat_error)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"chat\",\n  \"text\": \"    \"\n}"
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Chat - Rate Limit (send this 6x fast)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"chat\",\n  \"text\": \"spam test\"\n}"
+            },
+            "description": "CHAT_RATE_LIMIT is 5 messages per CHAT_RATE_WINDOW_MS (5000ms). Click Send 6 times within 5 seconds on the same connected tab - the 6th send should get back a chat_error 'sending too fast' instead of a broadcast chat_message."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Edge Cases",
+      "item": [
+        {
+          "name": "Connect - Unknown Player (expect close code 4001)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{UNKNOWN_PLAYER_ID}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{UNKNOWN_PLAYER_ID}}" }]
+            },
+            "description": "playerId doesn't exist in state.players, so bman.getPlayer() returns undefined. Expect the socket to immediately close with code 4001 ('Unknown player')."
+          },
+          "response": []
+        },
+        {
+          "name": "Connect - Missing playerId (expect close code 4001)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}",
+              "host": ["{{WS_BASE}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Connect - Wrong Origin (expect close code 4003)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "http://evil-site.example" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "description": "Deliberately sends the WRONG Origin header. Expect the backend's origin check to reject this with close code 4003 ('Forbidden origin') even though the playerId is valid."
+          },
+          "response": []
+        },
+        {
+          "name": "Move - No Active Room (expect silent no-op)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"move\",\n  \"direction\": \"up\"\n}"
+            },
+            "description": "Send this BEFORE the player is in a room with state 'playing' (e.g. right after joining, still in the waiting queue). handleGameMessage bails out early since room.state !== 'playing' - expect no response at all, not an error."
+          },
+          "response": []
+        },
+        {
+          "name": "Malformed JSON (expect silent drop)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Origin", "value": "{{ALLOWED_ORIGIN}}" }
+            ],
+            "url": {
+              "raw": "{{WS_BASE}}?playerId={{PLAYER_ID_A}}",
+              "host": ["{{WS_BASE}}"],
+              "query": [{ "key": "playerId", "value": "{{PLAYER_ID_A}}" }]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{ this is not valid json"
+            },
+            "description": "ws.on('message') wraps JSON.parse in try/catch and returns silently on failure. Expect the connection to stay open with no crash and no response."
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}

@@ -1,8 +1,8 @@
 import * as state from "../engine/globals.js";
 import * as bman from "../engine/functions.js";
 import * as json from "../json.js";
-import { broadcastGameUpdate, broadcastOpponentsLeft, broadcastQueuePositions } from "../services/wsManager.js";
 import * as matchmaking from "../engine/matchmaking.js";
+import { removePlayer } from "../services/wsManager.js";
 
 export function registerPlayerRoutes(route) {
     route("POST", "/api/players", handleJoin);
@@ -63,34 +63,6 @@ async function handleJoin(req, res) {
         queuePosition: bman.getQueuePosition(player.id)
     });
     return;
-    // (room-formation branch is gone — a fresh joiner is always "waiting" now;
-    //  the room shows up later via the "game_update" WS message)
-
-    // Try to create rooms
-    // const createdRooms = bman.processQueue();
-    // for (const room of createdRooms) broadcastToRoom(room);
-    // broadcastQueuePositions(state.waitingQueue); // refresh positions for everyone still waiting
-
-
-    // Determine player's current state
-    // const roomId = state.playerRooms.get(player.id);
-    // if (roomId) {
-    //     const room = bman.getRoom(roomId);
-    //     json.sendJson(res, 201, {
-    //         player,
-    //         status: "room",
-    //         roomId: room.id,
-    //         room: { id: room.id, state: room.state, playerCount: room.players.length }
-    //     });
-    //     return;
-    // }
-
-    // Player is still waiting.
-    // json.sendJson(res, 201, {
-    //     player,
-    //     status: "waiting",
-    //     queuePosition: bman.getQueuePosition(player.id)
-    // });
 }
 
 function handleGetPlayer(req, res, { params }) {
@@ -117,50 +89,8 @@ function handleGetPlayer(req, res, { params }) {
 }
 
 function handleLeavePlayer(req, res, { params }) {
-    const playerId = params.id;
-    const player = bman.getPlayer(playerId);
-    if (!player) { json.sendError(res, 404, "Player not found."); return; }
-
-    const queueIndex = state.waitingQueue.indexOf(playerId);
-    if (queueIndex !== -1) {
-        state.waitingQueue.splice(queueIndex, 1);
-        state.players.delete(playerId);
-        matchmaking.onPlayerLeftQueue();
-        json.sendJson(res, 200, { success: true });
-        return;
-    }
-
-    const roomId = state.playerRooms.get(playerId);
-    if (roomId) {
-        const room = bman.getRoom(roomId);
-        state.playerRooms.delete(playerId);
-        state.players.delete(playerId);
-
-        if (room) {
-            const index = room.players.indexOf(playerId);
-            if (index !== -1) room.players.splice(index, 1);
-            if (room.game?.players) delete room.game.players[playerId];
-
-            if (room.players.length === 0) {
-                if (room.countdownTimer) clearTimeout(room.countdownTimer);
-                state.rooms.delete(room.id);
-            } else if (room.players.length === 1 && room.state !== "finished") {
-                const lastPlayerId = room.players[0];
-                if (room.countdownTimer) clearTimeout(room.countdownTimer);
-                broadcastOpponentsLeft(lastPlayerId);
-                state.playerRooms.delete(lastPlayerId);
-                state.players.delete(lastPlayerId);
-                state.rooms.delete(room.id);
-            } else {
-                broadcastGameUpdate(room);
-            }
-        }
-
-        json.sendJson(res, 200, { success: true, roomId });
-        return;
-    }
-
-    state.players.delete(playerId);
+    const removed = removePlayer(params.id);
+    if (!removed) { json.sendError(res, 404, "Player not found."); return; }
     json.sendJson(res, 200, { success: true });
 }
 

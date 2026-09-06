@@ -2,42 +2,38 @@ import { WebSocketServer } from "ws";
 
 import * as bman from "../engine/functions.js";
 import * as state from "../engine/globals.js";
-
 import { movePlayer, placeBomb, explodeBomb, clearExplosion, checkWinner, serializeGame } from "../engine/gameState.js";
-import { EXPLOSION_TIME, WS_MAX_PAYLOAD_BYTES } from "../engine/config.js";
+import { EXPLOSION_TIME, WS_MAX_PAYLOAD_BYTES, DISCONNECT_GRACE_MS } from "../engine/config.js";
 import { getQueueTimerStatus } from "../engine/matchmaking.js";
-// import { getMatchmakingStatusFor } from "./engine/matchmaking.js";
-// wsManager.js and matchmaking.js now import each other — that's fine in ES modules as long as neither calls the other at the top level (they don't; every call happens inside a function body).
-
+import * as matchmaking from "../engine/matchmaking.js";
 import { sanitizeMessage, isRateLimited, clearRateLimit, appendToHistory } from "../engine/chat.js";
 
-const sockets = new Map(); // playerId -> ws
+const socketsByPlayer = new Map();   // playerId -> Set<ws>  (one entry per open tab)
+const disconnectTimers = new Map();  // playerId -> timeoutId (pending "really gone?" check)
 
 export function createWebSocketServer(httpServer) {
     const wss = new WebSocketServer({
         server: httpServer,
         path: "/ws",
-        maxPayload: WS_MAX_PAYLOAD_BYTES, // ws auto-closes (code 1009) anything larger, before parsing
+        maxPayload: WS_MAX_PAYLOAD_BYTES,
     });
-    // { server: httpServer, path: "/ws" } tells ws to hook into your existing http.Server's upgrade event automatically, scoped to /ws — no manual handshake code needed, and requests to other paths are left alone.
 
     wss.on("connection", (ws, req) => {
         if (req.headers.origin !== "http://localhost:3000") {
             ws.close(4003, "Forbidden origin");
             return;
         }
+
         const url = new URL(req.url, `http://${req.headers.host}`);
         const playerId = url.searchParams.get("playerId");
         const player = playerId && bman.getPlayer(playerId);
 
         if (!player) {
-            console.log("[ws] closing — unknown player");
             ws.close(4001, "Unknown player");
             return;
         }
 
-        sockets.set(playerId, ws);
-        // console.log("[ws] registered, total sockets:", sockets.size);
+        registerSocket(playerId, ws);
 
         ws.on("message", (raw) => {
             let msg;
@@ -45,47 +41,107 @@ export function createWebSocketServer(httpServer) {
             handleGameMessage(playerId, msg);
         });
 
-        sendCurrentStatus(playerId); // push current state immediately on connect
+        sendCurrentStatus(playerId);
 
-        ws.on("close", () => { sockets.delete(playerId); clearRateLimit(playerId); });
-        ws.on("error", () => sockets.delete(playerId));
+        ws.on("close", () => unregisterSocket(playerId, ws));
+        ws.on("error", () => unregisterSocket(playerId, ws));
     });
 
     return wss;
 }
 
-function send(playerId, payload) {
-    const ws = sockets.get(playerId);
-
-    if (!ws) {
-        // console.log(`[ws] no socket registered for player ${playerId}`);
-        return;
+function registerSocket(playerId, ws) {
+    // A new tab connecting cancels any pending "player fully left" cleanup —
+    // this is what makes a page refresh (brief close-then-reconnect) safe.
+    if (disconnectTimers.has(playerId)) {
+        clearTimeout(disconnectTimers.get(playerId));
+        disconnectTimers.delete(playerId);
     }
-
-    // console.log(`[ws] readyState for ${playerId}:`, ws.readyState);
-    // 0 = CONNECTING, 1 = OPEN, 2 = CLOSING, 3 = CLOSED
-
-    if (ws.readyState !== ws.OPEN) {
-        // console.log(`[ws] socket not open, skipping send`);
-        return;
-    }
-
-    ws.send(JSON.stringify(payload));
-    // console.log(`[ws] sent to ${playerId}:`, payload);
+    if (!socketsByPlayer.has(playerId)) socketsByPlayer.set(playerId, new Set());
+    socketsByPlayer.get(playerId).add(ws);
 }
 
-// export function broadcastToRoom(room) {
-//     const payload = {
-//         type: "room_update",
-//         room: {
-//             id: room.id,
-//             state: room.state,
-//             playerCount: room.players.length,
-//             players: bman.getRoomPlayers(room),
-//         },
-//     };
-//     for (const playerId of room.players) send(playerId, payload);
-// }
+function unregisterSocket(playerId, ws) {
+    const sockets = socketsByPlayer.get(playerId);
+    if (!sockets) return;
+    sockets.delete(ws);
+    if (sockets.size > 0) return; // other tabs for this player are still open
+
+    socketsByPlayer.delete(playerId);
+    const timer = setTimeout(() => {
+        disconnectTimers.delete(playerId);
+        removePlayer(playerId);
+    }, DISCONNECT_GRACE_MS);
+    disconnectTimers.set(playerId, timer);
+}
+
+function send(playerId, payload) {
+    const sockets = socketsByPlayer.get(playerId);
+    if (!sockets || sockets.size === 0) return;
+    const data = JSON.stringify(payload);
+    for (const ws of sockets) {
+        if (ws.readyState === ws.OPEN) ws.send(data);
+    }
+}
+
+export function closeAllSockets(playerId) {
+    const sockets = socketsByPlayer.get(playerId);
+    if (!sockets) return;
+    for (const ws of sockets) ws.close(4000, "Player removed");
+    socketsByPlayer.delete(playerId);
+}
+
+// Single source of truth for "this player is actually gone" — used by both
+// an explicit Leave click and the last-tab-disconnected grace-period timeout.
+export function removePlayer(playerId) {
+    clearRateLimit(playerId);
+    const player = bman.getPlayer(playerId);
+    if (!player) return false;
+
+    const queueIndex = state.waitingQueue.indexOf(playerId);
+    if (queueIndex !== -1) {
+        state.waitingQueue.splice(queueIndex, 1);
+        state.players.delete(playerId);
+        matchmaking.onPlayerLeftQueue();
+        closeAllSockets(playerId);
+        return true;
+    }
+
+    const roomId = state.playerRooms.get(playerId);
+    if (roomId) {
+        const room = bman.getRoom(roomId);
+        state.playerRooms.delete(playerId);
+        state.players.delete(playerId);
+
+        if (room) {
+            const index = room.players.indexOf(playerId);
+            if (index !== -1) room.players.splice(index, 1);
+            if (room.game?.players) delete room.game.players[playerId];
+
+            if (room.players.length === 0) {
+                if (room.countdownTimer) clearTimeout(room.countdownTimer);
+                state.rooms.delete(room.id);
+            } else if (room.players.length === 1 && room.state !== "finished") {
+                const lastPlayerId = room.players[0];
+                if (room.countdownTimer) clearTimeout(room.countdownTimer);
+                broadcastOpponentsLeft(lastPlayerId);
+                state.playerRooms.delete(lastPlayerId);
+                state.players.delete(lastPlayerId);
+                state.rooms.delete(room.id);
+                closeAllSockets(lastPlayerId);
+            } else {
+                broadcastGameUpdate(room);
+            }
+        }
+
+        closeAllSockets(playerId);
+        return true;
+    }
+
+    state.players.delete(playerId);
+    closeAllSockets(playerId);
+    return true;
+}
 
 export function broadcastQueuePositions(playerIds) {
     for (const playerId of playerIds) {

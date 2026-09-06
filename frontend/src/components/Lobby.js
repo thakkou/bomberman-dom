@@ -16,8 +16,8 @@ async function joinGame(event) {
 
     try {
         const data = await joinQueue(nickname);
-        sessionStorage.setItem("bomberman:playerId", data.player.id);
-        sessionStorage.setItem("bomberman:nickname", nickname);
+        localStorage.setItem("bomberman:playerId", data.player.id);
+        localStorage.setItem("bomberman:nickname", nickname);
         router.navigate("/waiting");
     } catch (err) {
         errorEl.style.display = 'flex';

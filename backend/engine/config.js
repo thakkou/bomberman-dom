@@ -2,6 +2,12 @@
 // Config
 // ============================================================
 
+// *** backend specific ***************************************
+
+export const DISCONNECT_GRACE_MS = 4000; // survives a page refresh without treating it as "player left"
+
+// ************************************************************
+
 export const PLAYERS_PER_ROOM = 4;
 export const BOARD_COLUMNS = 19;
 export const BOARD_SIZE = 209;

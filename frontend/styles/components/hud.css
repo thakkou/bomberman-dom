@@ -9,18 +9,21 @@
   color: #f8fafc;
 }
 
-.game-title {
+/* .game-title {
   font-size: 22px;
   font-weight: 800;
   letter-spacing: 2px;
   white-space: nowrap;
-}
+} */
 
 .hud {
   display: flex;
-  flex-direction: column;
-  gap: 8px;
-  flex: 1;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  /* flex-direction: column; */
+  /* gap: 8px; */
+  /* flex: 1; */
 }
 
 .hud-players {

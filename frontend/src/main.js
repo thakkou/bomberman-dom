@@ -67,13 +67,13 @@ router.addRoute({
     patchDOM(router);
     startGame();
     wireChat();
-    connectWebSocket(sessionStorage.getItem("bomberman:playerId"), {
+    connectWebSocket(localStorage.getItem("bomberman:playerId"), {
       // ...existing handlers from wireWaiting stay for the waiting page only...
       onGameUpdate: (game, roomState, countdownEndsAt) => onGameUpdate(game, roomState, countdownEndsAt),
       onOpponentsLeft: () => {
         closeWebSocket();
-        sessionStorage.removeItem("bomberman:playerId"); // keep nickname for prefill
-        sessionStorage.setItem("bomberman:opponentsLeft", "1");
+        localStorage.removeItem("bomberman:playerId"); // keep nickname for prefill
+        localStorage.setItem("bomberman:opponentsLeft", "1");
         router.navigate("/lobby");
       },
       onChatMessage: (message) => appendChatMessage(message),
@@ -122,9 +122,9 @@ function wireLobby() {
   const input = document.getElementById("nickname");
   const errorEl = document.getElementById("lobby-error");
 
-  if (sessionStorage.getItem("bomberman:opponentsLeft")) {
-    sessionStorage.removeItem("bomberman:opponentsLeft");
-    input.value = sessionStorage.getItem("bomberman:nickname") ?? "";
+  if (localStorage.getItem("bomberman:opponentsLeft")) {
+    localStorage.removeItem("bomberman:opponentsLeft");
+    input.value = localStorage.getItem("bomberman:nickname") ?? "";
     errorEl.style.display = 'flex';
     errorEl.textContent = "All other players left the game.";
   }
@@ -135,7 +135,7 @@ function wireLobby() {
 let tickHandle = null;
 
 function wireWaiting() {
-  const playerId = sessionStorage.getItem("bomberman:playerId");
+  const playerId = localStorage.getItem("bomberman:playerId");
   if (!playerId) {
     router.navigate("/lobby");
     return;
@@ -164,10 +164,10 @@ function wireWaiting() {
 
   document.getElementById("leave-waiting")?.addEventListener("click", async () => {
     stopWaitingTimers();
-    const playerId = sessionStorage.getItem("bomberman:playerId");
+    const playerId = localStorage.getItem("bomberman:playerId");
     if (playerId) await api.leaveQueue(playerId).catch(() => {});
-    sessionStorage.removeItem("bomberman:playerId");
-    sessionStorage.removeItem("bomberman:nickname");
+    localStorage.removeItem("bomberman:playerId");
+    localStorage.removeItem("bomberman:nickname");
     router.navigate("/lobby");
   });
 }
@@ -201,7 +201,7 @@ function stopWaitingTimers() {
 
 
 async function fetchPlayerState() {
-  const playerId = sessionStorage.getItem("bomberman:playerId");
+  const playerId = localStorage.getItem("bomberman:playerId");
   if (!playerId) return { playerId: null };
   
   try {
@@ -209,8 +209,8 @@ async function fetchPlayerState() {
     return { playerId, ...data }; // { playerId, status, room?, queuePosition? }
   } catch {
     // Player no longer exists server-side (expired, left, server restarted).
-    sessionStorage.removeItem("bomberman:playerId");
-    sessionStorage.removeItem("bomberman:nickname");
+    localStorage.removeItem("bomberman:playerId");
+    localStorage.removeItem("bomberman:nickname");
     return { playerId: null };
   }
 }
@@ -222,16 +222,16 @@ window.addEventListener("pagehide", () => {
   // and mobile Safari (where beforeunload is unreliable)
   closeWebSocket();
 
-  const playerId = sessionStorage.getItem("bomberman:playerId");
-  if (!playerId) return;
+  // const playerId = localStorage.getItem("bomberman:playerId");
+  // if (!playerId) return;
 
-  // fetch is normally cancelled mid-unload; keepalive lets this last request
-  // finish in the background even after the page has started tearing down.
-  fetch(`http://localhost:8080/api/players/${playerId}`, {
-    method: "DELETE",
-    keepalive: true,
-  }).catch(() => {});
+  // // fetch is normally cancelled mid-unload; keepalive lets this last request
+  // // finish in the background even after the page has started tearing down.
+  // fetch(`http://localhost:8080/api/players/${playerId}`, {
+  //   method: "DELETE",
+  //   keepalive: true,
+  // }).catch(() => {});
 
-  sessionStorage.removeItem("bomberman:playerId");
-  sessionStorage.removeItem("bomberman:nickname");
+  // localStorage.removeItem("bomberman:playerId");
+  // localStorage.removeItem("bomberman:nickname");
 });

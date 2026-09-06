@@ -4,8 +4,6 @@ import { getConfig } from "../services/api.js";
 import { sendGameAction } from "../services/ws.js";
 
 const config = await getConfig();
-// const myPlayerId = sessionStorage.getItem("bomberman:playerId");
-// console.log(myPlayerId + "aaa")
 
 const MOVE_DURATION = 150;
 const POWERUP_ICONS = { bombs: "💣+", flames: "🔥+", speed: "⚡" };
@@ -22,7 +20,7 @@ const playerEls = new Map();  // playerId -> DOM element
 const playerAnim = new Map(); // playerId -> { fromX, fromY, toX, toY, startTime }
 
 function getMyPlayerId() {
-  return sessionStorage.getItem("bomberman:playerId");
+  return localStorage.getItem("bomberman:playerId");
 }
 
 function generateMapCubes() {
