@@ -1,3 +1,5 @@
+"use strict";
+
 import * as state from "../engine/globals.js";
 import * as bman from "../engine/functions.js";
 import * as json from "../json.js";

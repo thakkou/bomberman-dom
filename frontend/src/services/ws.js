@@ -28,8 +28,8 @@ export function connectWebSocket(playerId, handlers = {}) {
         try {
             const payload = JSON.parse(event.data);
 
-            if (payload.type === "room_update") handlers.onRoomUpdate?.(payload.room);
-            if (payload.type === "queue_update") handlers.onQueueUpdate?.(payload.queuePosition);
+            // if (payload.type === "room_update") handlers.onRoomUpdate?.(payload.room);
+            if (payload.type === "queue_update") handlers.onQueueUpdate?.(payload.queuePosition, payload.playerCount);
             if (payload.type === "game_update") handlers.onGameUpdate?.(payload.game, payload.roomState, payload.countdownEndsAt);
             if (payload.type === "queue_timer") handlers.onQueueTimer?.(payload.endsAt);
             if (payload.type === "countdown") handlers.onCountdown?.(payload.endsAt);

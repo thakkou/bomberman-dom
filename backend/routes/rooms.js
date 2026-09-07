@@ -1,8 +1,7 @@
-import { PLAYERS_PER_ROOM } from "../engine/config.js";
-import { createGameState } from "../engine/gameState.js";
+"use strict";
+
 import * as bman from "../engine/functions.js";
 import * as json from "../json.js";
-import { broadcastGameUpdate } from "../services/wsManager.js";
 
 export function registerRoomRoutes(route) {
     route("GET", "/api/rooms/:id", handleGetRoom);

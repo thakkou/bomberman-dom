@@ -1,3 +1,5 @@
+"use strict";
+
 import { WebSocketServer } from "ws";
 
 import * as bman from "../engine/functions.js";
@@ -144,10 +146,12 @@ export function removePlayer(playerId) {
 }
 
 export function broadcastQueuePositions(playerIds) {
+    const playerCount = state.waitingQueue.length;
     for (const playerId of playerIds) {
         send(playerId, {
             type: "queue_update",
-            queuePosition: bman.getQueuePosition(playerId)
+            queuePosition: bman.getQueuePosition(playerId),
+            playerCount,
         });
     }
 }

@@ -1,3 +1,5 @@
+"use strict";
+
 import http from "node:http";
 
 // Routing

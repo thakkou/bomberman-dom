@@ -1,6 +1,7 @@
 "use strict";
 
 import { createElement } from "mini-framework/src/vdom/index.js";
+import LeaveBtn from "./LeaveBtn.js";
 // import hudState from "../state/hudState.js";
 
 export default function Game() {
@@ -21,6 +22,7 @@ export default function Game() {
                 createElement("div", { class: "hud-players", id: "hud-players" }, {}),
                 createElement("div", { class: "hud-powerups-bar", id: "hud-powerups-bar" }, {}),
             ),
+            LeaveBtn(),
         ),
         createElement(
             "div",

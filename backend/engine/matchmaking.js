@@ -1,19 +1,23 @@
+"use strict";
+
 import * as state from "./globals.js";
 import * as conf from "./config.js";
 import { createRoom, getPlayer } from "./functions.js";
 import { createGameState } from "./gameState.js";
 import { broadcastQueueTimer, broadcastTimerCancelled, broadcastGameUpdate } from "../services/wsManager.js";
+import { broadcastQueuePositions } from "../services/wsManager.js"
 
 let queueTimer = null;
 let queueEndsAt = null;
 
 export function onQueueChanged() {
     const count = state.waitingQueue.length;
+    broadcastQueuePositions(state.waitingQueue); // keep everyone's live count in sync
 
     if (count >= conf.PLAYERS_PER_ROOM) {
         cancelQueueTimer();
         lockAndCreateRoom(state.waitingQueue.splice(0, conf.PLAYERS_PER_ROOM));
-        onQueueChanged(); // handle anyone left over beyond this batch immediately
+        onQueueChanged();
         return;
     }
 

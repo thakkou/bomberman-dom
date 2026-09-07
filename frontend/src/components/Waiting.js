@@ -3,6 +3,8 @@
 import { createElement } from "mini-framework/src/vdom/index.js";
 import waitingState from "../state/waitingState.js";
 
+import LeaveBtn from "./LeaveBtn.js";
+
 export default function Waiting() {
     const { playerCount, timerLabel, secondsLeft } = waitingState.getState();
 
@@ -23,16 +25,6 @@ export default function Waiting() {
         secondsLeft !== null
             ? createElement("p", { class: "waiting-status", "aria-live": "polite" }, {}, `${timerLabel} ${secondsLeft}s`)
             : null,
-        createElement("button", { class: "btn-leave", type: "button" }, { click: leaveWaiting }, "Leave"),
+        LeaveBtn()
     );
-}
-
-async function leaveWaiting() {
-    const { router } = await import("../main.js");
-    const { leaveQueue } = await import("../services/api.js");
-    const playerId = localStorage.getItem("bomberman:playerId");
-    if (playerId) await leaveQueue(playerId).catch(() => {});
-    localStorage.removeItem("bomberman:playerId");
-    localStorage.removeItem("bomberman:nickname");
-    router.navigate("/lobby");
 }

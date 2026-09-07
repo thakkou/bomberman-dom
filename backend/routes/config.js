@@ -1,3 +1,5 @@
+"use strict";
+
 import * as json from "../json.js";
 import * as conf from "../engine/config.js";
 

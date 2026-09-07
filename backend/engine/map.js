@@ -1,3 +1,5 @@
+"use strict";
+
 import { BOARD_COLUMNS, BOARD_SIZE, BLAST_RANGE, WALLS } from "./config.js";
 
 const BOARD_ROWS = BOARD_SIZE / BOARD_COLUMNS;

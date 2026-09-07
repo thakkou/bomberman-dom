@@ -1,3 +1,5 @@
+"use strict";
+
 import { CHAT_MAX_LENGTH, CHAT_HISTORY_LIMIT, CHAT_RATE_LIMIT, CHAT_RATE_WINDOW_MS } from "./config.js";
 
 const rateLimits = new Map(); // playerId -> timestamps[]

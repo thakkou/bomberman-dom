@@ -1,3 +1,5 @@
+"use strict";
+
 // ============================================================
 // State
 // ============================================================
@@ -15,6 +17,3 @@ export const playerRooms = new Map();
 // playerId -> player
 // Keeps player information independently from rooms.
 export const players = new Map();
-
-// playerId -> batchId, only while locked (pre-room)
-// export const playerBatches = new Map();

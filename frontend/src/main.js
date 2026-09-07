@@ -125,17 +125,11 @@ function wireLobby() {
   stopGame();
   stopWaitingTimers();
 
-  const form = document.getElementById("nickname-form");
-  if (!form) return;
-
-  const input = document.getElementById("nickname");
-  const errorEl = document.getElementById("lobby-error");
-
   if (localStorage.getItem("bomberman:opponentsLeft")) {
     localStorage.removeItem("bomberman:opponentsLeft");
-    input.value = localStorage.getItem("bomberman:nickname") ?? "";
-    errorEl.style.display = 'flex';
-    errorEl.textContent = "All other players left the game.";
+    const input = document.getElementById("nickname");
+    if (input) input.value = localStorage.getItem("bomberman:nickname") ?? "";
+    lobbyState.setState({ error: "All other players left the game." });
   }
 }
 
@@ -145,8 +139,7 @@ let tickTimer = null;
 
 function wireWaiting() {
   connectWebSocket(localStorage.getItem("bomberman:playerId"), {
-    onRoomUpdate: (room) => waitingState.setState({ playerCount: room.playerCount }),
-    onQueueUpdate: (queuePosition) => waitingState.setState({ playerCount: queuePosition }),
+    onQueueUpdate: (queuePosition, playerCount) => waitingState.setState({ playerCount }),
     onQueueTimer: (endsAt) => startTimerDisplay(endsAt, "Locking in players in"),
     onCountdown: (endsAt) => startTimerDisplay(endsAt, "Game starts in"),
     onTimerCancelled: () => { clearInterval(tickTimer); waitingState.setState({ secondsLeft: null }); },
