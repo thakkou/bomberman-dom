@@ -6,10 +6,19 @@ import { sendGameAction } from "../services/ws.js";
 import { createElement, renderElement } from "mini-framework/src/vdom/index.js";
 import hudState from "../state/hudState.js";
 
+const CELL_SIZE = 49; // matches --cell-size in CSS — single source of truth
+
+// Board size in CSS pixels (.map-game in layout.css) and the .border-line padding
+// (2 × 20px) around it. The board is a fixed pixel grid, so instead of reflowing
+// it we scale it down to fit whatever space the responsive layout gives it.
+const BOARD_WIDTH = 950;
+const BOARD_HEIGHT = 550;
+const BOARD_FRAME_PADDING = 40;
+// ******************************
+
 const config = await getConfig();
 
 const MOVE_DURATION = 150;
-const POWERUP_ICONS = { bombs: "💣+", flames: "🔥+", speed: "⚡" };
 
 let latestGame = null;
 let renderedGame = null;
@@ -40,11 +49,22 @@ function generateMapCubes() {
   container.appendChild(fragment);
 }
 
-function cellSize() {
-  const cube = document.getElementById("cube-0");
-  if (!cube) { generateMapCubes(); return cellSize(); } // board's missing — rebuild and retry
-  return cube.getBoundingClientRect().width;
+// Scale the board to fit its frame. Cells and player tokens are transformed
+// together, so the grid stays aligned at any scale.
+function fitBoard() {
+  const board = document.getElementById("map-game");
+  const frame = board?.parentElement;
+  if (!board || !frame) return;
+
+  const availableWidth = frame.clientWidth - BOARD_FRAME_PADDING;
+  const availableHeight = frame.clientHeight - BOARD_FRAME_PADDING;
+  const scale = Math.min(1, availableWidth / BOARD_WIDTH, availableHeight / BOARD_HEIGHT);
+  board.style.transform = `scale(${Math.max(scale, 0.25)})`;
 }
+
+window.addEventListener("resize", fitBoard);
+// ******************************
+
 
 function indexToXY(index, size) {
   const col = index % config.BOARD_COLUMNS;
@@ -64,9 +84,13 @@ function ensurePlayerElement(playerId, index, size) {
   let el = playerEls.get(playerId);
   if (el) return el;
 
+  // Visuals (body, antenna, visor) are drawn entirely in CSS — see game.css.
   el = document.createElement("div");
   el.className = "player-token";
-  el.textContent = "🙂";
+  el.setAttribute("aria-hidden", "true");
+  const body = document.createElement("span");
+  body.className = "token-body";
+  el.appendChild(body);
   document.getElementById("map-game").appendChild(el);
   playerEls.set(playerId, el);
 
@@ -99,12 +123,6 @@ function renderStaticCells(game) {
     cube.classList.toggle("explosion", isExplosion);
     cube.classList.toggle("powerup", Boolean(powerupType) && !isExplosion);
     cube.dataset.powerup = powerupType ?? "";
-
-    cube.textContent = isExplosion ? "💥"
-      : isBomb ? "💣"
-        : isBox ? "Box"
-          : powerupType ? POWERUP_ICONS[powerupType]
-            : "";
   }
 }
 
@@ -174,7 +192,7 @@ hudState.subscribe(renderHud);
 function tick() {
   if (isDirty && latestGame) {
     try {
-      const size = cellSize() + 1;
+      const size = CELL_SIZE + 1;
       renderStaticCells(latestGame);
       renderPlayers(latestGame, size);
       // renderHUD(latestGame);  <- delete this line
@@ -249,6 +267,10 @@ export function onGameUpdate(game, newRoomState, countdownEndsAt) {
 export function startGame() {
   roomState = null;
   generateMapCubes();
+
+  fitBoard();
+  // ******************************
+
   document.getElementById("map-game").style.display = "none";
   document.getElementById("start-countdown").style.display = "";
   if (!rafId) rafId = requestAnimationFrame(tick);

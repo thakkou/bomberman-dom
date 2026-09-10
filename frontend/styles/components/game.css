@@ -1,93 +1,276 @@
+/* ============================================================
+   Board surface
+   ============================================================ */
+
 .game-container,
 .border-line,
 .map-game {
-  background-color: #192e5f;
+  background-color: #0b1324;
 }
-
-.cube,
-.cube.empty-space {
-  color: #ffffff;
-  background-color: #334155;
-}
-
-.cube.cant-be-broken {
-  background-color: #0b1220;
-}
-
-.cube.box {
-  background-color: #92400e;
-}
-
-.cube.player {
-  background-color: #2563eb;
-}
-
-.cube.bomb {
-  background-color: #475569;
-}
-
-.cube.explosion {
-  background-color: #f97316;
-}
-
-/******************************/
 
 .map-game {
   position: relative; /* anchor for absolutely positioned player tokens */
+  border-radius: 10px;
+  background-image: radial-gradient(120% 120% at 50% 0%, #10203a 0%, #0a1120 72%);
 }
+
+/* ============================================================
+   Cells — every visual is drawn with CSS (no emoji, no text)
+   ============================================================ */
+
+.cube,
+.cube.empty-space {
+  position: relative;
+  border-radius: 3px;
+  background-color: #141e33;
+  background-image: linear-gradient(160deg, #1b2740, #141e33);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+  overflow: hidden;
+  transition: background-color 140ms linear, border-radius 140ms linear;
+}
+
+/* Solid, indestructible wall */
+.cube.cant-be-broken {
+  border-radius: 5px;
+  background-image: linear-gradient(160deg, #3b4a63, #1f2a3f);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.09),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.45),
+    0 1px 2px rgba(0, 0, 0, 0.35);
+}
+
+/* --- Destructible crate ------------------------------------ */
+
+.cube.box {
+  border-radius: 6px;
+  background-image: linear-gradient(150deg, #c07a3c 0%, #a25f28 48%, #8a4d1d 100%);
+  box-shadow:
+    inset 0 2px 0 rgba(255, 255, 255, 0.28),
+    inset 0 -4px 0 rgba(0, 0, 0, 0.32),
+    0 2px 3px rgba(0, 0, 0, 0.4);
+}
+
+/* Plank frame + cross brace */
+.cube.box::before {
+  content: "";
+  position: absolute;
+  inset: 5px;
+  border: 2px solid rgba(58, 28, 4, 0.32);
+  border-radius: 4px;
+  background-image: linear-gradient(135deg,
+    transparent 46%, rgba(58, 28, 4, 0.32) 46%,
+    rgba(58, 28, 4, 0.32) 54%, transparent 54%);
+}
+
+/* Top-left light catch so the crate reads as 3D */
+.cube.box::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.2), transparent 58%);
+}
+
+/* --- Bomb -------------------------------------------------- */
+
+.cube.bomb {
+  background-image: linear-gradient(160deg, #1d2740, #131c2e);
+}
+
+.cube.bomb::before {
+  content: "";
+  position: absolute;
+  top: 6px;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-left: 2px;
+  border-radius: 50%;
+  background-image: radial-gradient(circle at 40% 40%, #fef3c7, #fb923c 55%, rgba(251, 146, 60, 0) 74%);
+  animation: fuse-spark 500ms steps(2, end) infinite;
+}
+
+.cube.bomb::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  background-image: radial-gradient(circle at 32% 28%, #64748b 0%, #1f2937 55%, #0b1120 100%);
+  box-shadow:
+    inset -3px -4px 6px rgba(0, 0, 0, 0.55),
+    0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 4px 8px rgba(0, 0, 0, 0.5);
+  animation: bomb-pulse 900ms ease-in-out infinite;
+}
+
+@keyframes bomb-pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); }
+  50%      { transform: translate(-50%, -50%) scale(1.08); }
+}
+
+@keyframes fuse-spark {
+  0%   { opacity: 0.45; }
+  100% { opacity: 1; }
+}
+
+/* --- Explosion --------------------------------------------- */
+
+.cube.explosion {
+  border-radius: 50%;
+  background-image: radial-gradient(circle,
+    #fff7d6 0%, #fcd34d 32%, #fb923c 62%, #ef4444 100%);
+  box-shadow: 0 0 18px rgba(251, 146, 60, 0.85);
+  animation: blast 450ms ease-out;
+}
+
+@keyframes blast {
+  0%   { transform: scale(0.55); opacity: 0.75; }
+  40%  { transform: scale(1.06); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* --- Power-ups --------------------------------------------- */
+
+.cube.powerup {
+  background-image: linear-gradient(160deg, #1b2740, #141e33);
+}
+
+/* Chip background */
+.cube.powerup::before {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border-radius: 10px;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 0 14px rgba(0, 0, 0, 0.45);
+}
+
+/* Chip glyph */
+.cube.powerup::after {
+  content: "";
+  position: absolute;
+  inset: 13px;
+  animation: powerup-float 1.4s ease-in-out infinite;
+}
+
+.cube.powerup[data-powerup="bombs"]::before {
+  background-image: linear-gradient(150deg, #475569, #0f172a);
+}
+
+.cube.powerup[data-powerup="bombs"]::after {
+  border-radius: 50%;
+  background-image: radial-gradient(circle at 35% 30%, #cbd5e1, #0f172a 76%);
+  box-shadow: 0 0 8px rgba(148, 163, 184, 0.45);
+}
+
+.cube.powerup[data-powerup="flames"]::before {
+  background-image: linear-gradient(150deg, #f97316, #991b1b);
+}
+
+.cube.powerup[data-powerup="flames"]::after {
+  background-image: linear-gradient(#fff7ed, #fbbf24);
+  clip-path: polygon(50% 0%, 78% 36%, 66% 36%, 88% 66%, 62% 100%,
+                     38% 100%, 12% 66%, 34% 36%, 22% 36%);
+}
+
+.cube.powerup[data-powerup="speed"]::before {
+  background-image: linear-gradient(150deg, #22c55e, #065f46);
+}
+
+.cube.powerup[data-powerup="speed"]::after {
+  background-image: linear-gradient(#f0fdf4, #facc15);
+  clip-path: polygon(58% 0%, 18% 56%, 44% 56%, 34% 100%, 82% 40%, 54% 40%);
+}
+
+@keyframes powerup-float {
+  0%, 100% { transform: translateY(-1px); }
+  50%      { transform: translateY(1px); }
+}
+
+/* ============================================================
+   Player tokens — rounded robots, colored per player
+   ============================================================ */
 
 .player-token {
   position: absolute;
   top: 0;
   left: 0;
-  width: 49px; /* match your .cube size, or use it as var --cell-size */
-  height: 49px;
+  width: var(--cell-size);
+  height: var(--cell-size);
   display: flex;
   align-items: center;
   justify-content: center;
-  will-change: transform;
   pointer-events: none;
   z-index: 2;
+  will-change: transform;
 }
 
-.player-0 { 
-  background: #4f9dff; 
-  filter: hue-rotate(0deg); 
+.token-body {
+  position: relative;
+  width: 36px;
+  height: 36px;
+  border-radius: 12px;
+  background-image:
+    radial-gradient(120% 120% at 30% 18%, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0) 58%),
+    linear-gradient(155deg, var(--player-color, var(--accent)), var(--player-color-dark, var(--accent-strong)));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.28),
+    0 3px 7px rgba(0, 0, 0, 0.45);
+  animation: token-bob 1.8s ease-in-out infinite;
 }
 
-.player-1 { 
-  background: #ff5c5c; 
-  filter: hue-rotate(90deg); 
+/* Antenna */
+.token-body::before {
+  content: "";
+  position: absolute;
+  top: -7px;
+  left: 50%;
+  width: 3px;
+  height: 8px;
+  border-radius: 2px;
+  background-color: rgba(255, 255, 255, 0.55);
+  transform: translateX(-50%);
 }
 
-.player-2 { 
-  background: #4ade80; 
-  filter: hue-rotate(180deg); 
+/* Visor with two glowing eyes */
+.token-body::after {
+  content: "";
+  position: absolute;
+  top: 11px;
+  left: 5px;
+  right: 5px;
+  height: 13px;
+  border-radius: 999px;
+  background-image:
+    radial-gradient(circle at 28% 50%, #ffffff 0 19%, rgba(255, 255, 255, 0) 21%),
+    radial-gradient(circle at 72% 50%, #ffffff 0 19%, rgba(255, 255, 255, 0) 21%),
+    linear-gradient(#0b1120, #0b1120);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.12);
 }
 
-.player-3 { 
-  background: #facc15; 
-  filter: hue-rotate(270deg); 
+.player-token.player-me .token-body {
+  box-shadow:
+    0 0 0 2px rgba(255, 255, 255, 0.92),
+    0 0 16px 2px var(--player-color, var(--accent)),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 -3px 0 rgba(0, 0, 0, 0.28);
 }
 
-.player-me { 
-  outline: 2px solid white; 
-  border-radius: 50%; 
+@keyframes token-bob {
+  0%, 100% { transform: translateY(0); }
+  50%      { transform: translateY(-2px); }
 }
 
-/***************************/
-
-.cube.powerup[data-powerup="bombs"] {
-  background: #2b2b2b;
-  color: #fff;
-}
-
-.cube.powerup[data-powerup="flames"] {
-  background: #b3312c;
-  color: #fff;
-}
-
-.cube.powerup[data-powerup="speed"] {
-  background: #2fa84f;
-  color: #fff;
+@media (prefers-reduced-motion: reduce) {
+  .token-body,
+  .cube.bomb::before,
+  .cube.bomb::after,
+  .cube.powerup::after {
+    animation: none;
+  }
 }

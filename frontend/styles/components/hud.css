@@ -1,35 +1,35 @@
 .game-header {
-  box-sizing: border-box;
   display: flex;
   align-items: center;
-  gap: 24px;
-  padding: 12px 24px;
-  background-color: #0f172a;
-  border-bottom: 1px solid #1e293b;
-  color: #f8fafc;
+  gap: 20px;
+  padding: 14px 20px;
+  background-color: #101a2e;
+  background-image: linear-gradient(180deg, #16223c, #101a2e);
+  border-bottom: 1px solid var(--line);
+  color: var(--text);
 }
-
-/* .game-title {
-  font-size: 22px;
-  font-weight: 800;
-  letter-spacing: 2px;
-  white-space: nowrap;
-} */
 
 .hud {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
-  align-items: flex-start;
-  width: 100%;
-  /* flex-direction: column; */
-  /* gap: 8px; */
-  /* flex: 1; */
+  align-items: center;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Same button as the waiting room, but it sits inline in the HUD here —
+   reset the stacked layout (top margin) used on the waiting screen. */
+.game-header .btn-leave {
+  flex-shrink: 0;
+  margin-top: 0;
 }
 
 .hud-players {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 8px;
 }
 
 .hud-player {
@@ -37,40 +37,39 @@
   align-items: center;
   gap: 10px;
   padding: 6px 12px;
+  border: 1px solid var(--line-soft);
+  border-left: 3px solid var(--player-color, var(--line));
   border-radius: 8px;
-  border-left: 4px solid transparent;
-  background: #1e293b;
-  font-size: 14px;
+  background-color: var(--panel-2);
+  font-size: 13px;
+  transition: background-color 140ms ease, opacity 140ms ease;
 }
 
-.hud-player.player-0 { border-left-color: #4f9dff; }
-.hud-player.player-1 { border-left-color: #ff5c5c; }
-.hud-player.player-2 { border-left-color: #4ade80; }
-.hud-player.player-3 { border-left-color: #facc15; }
-
 .hud-player-me {
-  background: #334155;
-  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.4) inset;
+  background-color: var(--panel-3);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.16);
 }
 
 .hud-player-dead {
-  opacity: 0.4;
+  opacity: 0.45;
   text-decoration: line-through;
 }
 
 .hud-name {
+  min-width: 56px;
   font-weight: 700;
-  min-width: 60px;
 }
 
 .hud-lives {
   color: #fb7185;
+  font-size: 12px;
   letter-spacing: 1px;
 }
 
 .hud-score {
-  color: #facc15;
-  font-weight: 600;
+  color: var(--warning);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .hud-powerups-bar {
@@ -83,17 +82,21 @@
   align-items: center;
   gap: 6px;
   padding: 4px 10px;
+  border: 1px solid var(--line);
   border-radius: 999px;
-  background: #1e293b;
-  border: 1px solid #334155;
-  font-size: 13px;
+  background-color: var(--panel-2);
+  font-size: 12px;
 }
 
 .powerup-icon {
-  font-size: 14px;
+  font-size: 13px;
+  line-height: 1;
 }
 
 .powerup-value {
+  min-width: 10px;
+  color: var(--text);
   font-weight: 700;
-  color: #f8fafc;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
 }

@@ -1,13 +1,73 @@
+:root {
+  /* Board geometry — keep in sync with CELL_SIZE in src/scripts/game.js */
+  --cell-size: 49px;
+
+  /* Surfaces */
+  --bg: #070b16;
+  --panel: #121b2e;
+  --panel-2: #17223a;
+  --panel-3: #1e2c47;
+
+  /* Lines */
+  --line: #263450;
+  --line-soft: #1c2740;
+
+  /* Text */
+  --text: #e9eef8;
+  --text-muted: #9aabc7;
+  --text-faint: #64748b;
+
+  /* Accents */
+  --accent: #3b82f6;
+  --accent-strong: #2563eb;
+  --accent-soft: rgba(59, 130, 246, 0.16);
+  --danger: #ef4444;
+  --warning: #fbbf24;
+  --success: #34d399;
+
+  /* Player colors — shared by the board tokens and the HUD rows */
+  --player-0: #5b9dff;
+  --player-0-dark: #2358c0;
+  --player-1: #ff6b6b;
+  --player-1-dark: #b62f2f;
+  --player-2: #3ddc97;
+  --player-2-dark: #12845a;
+  --player-3: #fbbf24;
+  --player-3-dark: #b45309;
+
+  /* Shape */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 16px;
+  --shadow-panel: 0 24px 60px rgba(2, 6, 18, 0.55);
+  --shadow-soft: 0 6px 18px rgba(2, 6, 18, 0.35);
+  --ring: 0 0 0 3px rgba(59, 130, 246, 0.32);
+}
+
+* {
+  margin: 0;
+  padding: 0;
+}
+
 body {
-  color: #f8fafc;
+  min-height: 100vh;
+  color: var(--text);
+  background-color: var(--bg);
+  background-image:
+    radial-gradient(1100px 640px at 12% -12%, #16233d 0%, rgba(22, 35, 61, 0) 62%),
+    radial-gradient(900px 600px at 102% 112%, #101d33 0%, rgba(16, 29, 51, 0) 58%);
+  background-repeat: no-repeat;
+  font-family: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
 }
 
-#root {
-  background-color: #111827;
+::selection {
+  background: rgba(59, 130, 246, 0.4);
 }
 
-.main-container,
-.lives-and-score-container,
-.messages-container {
-  background-color: #1e293b;
-}
+/* Per-player color variables, reused by the board token and its HUD row. */
+.player-0 { --player-color: var(--player-0); --player-color-dark: var(--player-0-dark); }
+.player-1 { --player-color: var(--player-1); --player-color-dark: var(--player-1-dark); }
+.player-2 { --player-color: var(--player-2); --player-color-dark: var(--player-2-dark); }
+.player-3 { --player-color: var(--player-3); --player-color-dark: var(--player-3-dark); }

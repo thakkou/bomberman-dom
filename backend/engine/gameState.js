@@ -167,7 +167,6 @@ export function checkWinner(game) {
 }
 
 export function serializeGame(game) {
-    console.log(game.powerups)
     return {
         boxes: [...game.boxes],
         bombs: [...game.bombs.keys()],
