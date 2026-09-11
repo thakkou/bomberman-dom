@@ -138,55 +138,6 @@ function renderPlayers(game, size) {
   });
 }
 
-// --- HUD ---
-
-function HudPlayerRow(playerId, player, i, myPlayerId) {
-  const classes = ["hud-player", `player-${i}`];
-  if (playerId === myPlayerId) classes.push("hud-player-me");
-  if (!player.alive) classes.push("hud-player-dead");
-  return createElement("div", { class: classes.join(" ") }, {},
-    createElement("span", { class: "hud-name" }, {}, playerId === myPlayerId ? "You" : player.nickname),
-    createElement("span", { class: "hud-lives" }, {}, "❤".repeat(Math.max(0, player.lives))),
-    createElement("span", { class: "hud-score" }, {}, `${player.score} pts`),
-  );
-}
-
-function PowerupBadge(icon, value, label) {
-  return createElement("span", { class: "powerup-badge" }, {},
-    createElement("span", { class: "powerup-icon" }, {}, icon),
-    createElement("span", { class: "powerup-value", title: label }, {}, String(value)),
-  );
-}
-
-function renderHud() {
-  const container = document.getElementById("hud-players");
-  const powerupsContainer = document.getElementById("hud-powerups-bar");
-  const messageEl = document.getElementById("game-message");
-  if (!container) return;
-
-  const { players, myPlayerId, message } = hudState.getState();
-
-  const rows = Object.entries(players).map(([playerId, player], i) =>
-    HudPlayerRow(playerId, player, i, myPlayerId)
-  );
-  renderElement(true, container, ...rows);
-
-  const me = players[myPlayerId];
-  if (powerupsContainer && me) {
-    renderElement(true, powerupsContainer,
-      PowerupBadge("💣", me.maxBombs, "Bombs"),
-      PowerupBadge("🔥", me.blastRange, "Range"),
-      PowerupBadge("⚡", me.speedLevel, "Speed"),
-    );
-  }
-
-  if (messageEl) {
-    messageEl.textContent = message || "Move with Arrow keys or WASD. Drop a bomb with Space.";
-  }
-}
-
-hudState.subscribe(renderHud);
-
 // --- the animation loop ---
 
 function tick() {
@@ -195,7 +146,6 @@ function tick() {
       const size = CELL_SIZE + 1;
       renderStaticCells(latestGame);
       renderPlayers(latestGame, size);
-      // renderHUD(latestGame);  <- delete this line
       renderedGame = latestGame;
     } catch (err) {
       console.error("Render error (skipping this frame):", err);

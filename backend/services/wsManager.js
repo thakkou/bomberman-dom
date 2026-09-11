@@ -168,6 +168,10 @@ function sendCurrentStatus(playerId) {
     }
 
     broadcastQueuePositions([playerId]);
+    // Catch the player up on the conversation happening in the waiting area.
+    if (state.lobby.chat.length && state.waitingQueue.includes(playerId)) {
+        send(playerId, { type: "chat_history", messages: state.lobby.chat });
+    }
     const { queueEndsAt } = getQueueTimerStatus();
     if (queueEndsAt) send(playerId, { type: "queue_timer", endsAt: queueEndsAt }); // import queueEndsAt getter, see below
 }
@@ -179,7 +183,10 @@ function sendCurrentStatus(playerId) {
 function handleChatMessage(playerId, msg) {
     const roomId = state.playerRooms.get(playerId);
     const room = roomId && bman.getRoom(roomId);
-    if (!room) return; // chat only exists once you're actually in a room
+    // Before a room exists the player is still queued: their chat goes to the
+    // waiting area and is carried into the room once the queue is locked.
+    const waiting = !room && state.waitingQueue.includes(playerId);
+    if (!room && !waiting) return;
 
     if (isRateLimited(playerId)) {
         send(playerId, { type: "chat_error", error: "You're sending messages too fast." });
@@ -195,13 +202,23 @@ function handleChatMessage(playerId, msg) {
     const player = bman.getPlayer(playerId);
     const chatMessage = { playerId, nickname: player?.nickname ?? "Unknown", text, sentAt: Date.now() };
 
-    appendToHistory(room, chatMessage);
-    broadcastChatMessage(room, chatMessage);
+    if (room) {
+        appendToHistory(room, chatMessage);
+        broadcastChatMessage(room, chatMessage);
+    } else {
+        appendToHistory(state.lobby, chatMessage);
+        broadcastLobbyChatMessage(chatMessage);
+    }
 }
 
 export function broadcastChatMessage(room, chatMessage) {
     const payload = { type: "chat_message", message: chatMessage };
     for (const playerId of room.players) send(playerId, payload);
+}
+
+function broadcastLobbyChatMessage(chatMessage) {
+    const payload = { type: "chat_message", message: chatMessage };
+    for (const playerId of state.waitingQueue) send(playerId, payload);
 }
 
 function handleGameMessage(playerId, msg) {

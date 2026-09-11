@@ -12,6 +12,7 @@ let queueEndsAt = null;
 
 export function onQueueChanged() {
     const count = state.waitingQueue.length;
+    if (count === 0) state.lobby.chat.length = 0; // nobody waiting: drop their chat
     broadcastQueuePositions(state.waitingQueue); // keep everyone's live count in sync
 
     if (count >= conf.PLAYERS_PER_ROOM) {
@@ -55,6 +56,11 @@ function lockAndCreateRoom(playerIds) {
     );
     room.game = createGameState(playerIds, nicknames);
     room.countdownEndsAt = Date.now() + conf.COUNTDOWN_MS;
+
+    // The conversation players had while waiting continues in the match:
+    // splice(0) both copies it into the room and empties the waiting chat, so
+    // the next wave of queued players starts with a clean slate.
+    room.chat = state.lobby.chat.splice(0);
 
     state.rooms.set(room.id, room);
     for (const playerId of playerIds) state.playerRooms.set(playerId, room.id);

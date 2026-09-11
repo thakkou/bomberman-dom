@@ -5,7 +5,7 @@ import { createElement } from "mini-framework/src/vdom/index.js";
 export default function LeaveBtn() {
     return createElement(
         "button",
-        { class: "btn-leave", type: "button" },
+        { class: "btn-leave", id: "btn-leave", type: "button" },
         { click: leaveGame },
         "Leave"
     );

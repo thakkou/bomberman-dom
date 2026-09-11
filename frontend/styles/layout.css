@@ -66,6 +66,9 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  /* content-box would make this 40px taller/wider than its parent and, once
+     centred, its top edge paints over the header's bottom padding. */
+  box-sizing: border-box;
   /* The board is a fixed pixel grid scaled down to fit (see fitBoard in
      src/scripts/game.js), so its unscaled box is hidden here. */
   overflow: hidden;

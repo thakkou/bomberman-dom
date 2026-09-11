@@ -10,7 +10,7 @@ export default function Waiting() {
 
     return createElement(
         "section",
-        { class: "waiting-container", "aria-label": "Waiting room" },
+        { class: "waiting-container", id: "waiting-component", "aria-label": "Waiting room" },
         {},
         createElement("h1", { class: "waiting-title" }, {}, "BOMBERMAN"),
         createElement("p", { class: "waiting-subtitle" }, {}, "Waiting for other players..."),

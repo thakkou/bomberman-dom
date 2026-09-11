@@ -2,11 +2,14 @@
 
 import Router from "mini-framework/src/router.js";
 import { patchDOM } from "mini-framework/src/vdom/index.js";
+
+// States
 import lobbyState from "./state/lobbyState.js";
 import waitingState from "./state/waitingState.js";
-// import chatState from "./state/chatState.js";
-// import hudState from "./state/hudState.js";
+import chatState from "./state/chatState.js";
+import hudState from "./state/hudState.js";
 
+// Components
 import App from "./components/App.js";
 import Lobby from "./components/Lobby.js";
 import Waiting from "./components/Waiting.js";
@@ -16,16 +19,38 @@ import NotFound from "./components/NotFound.js";
 
 import * as api from "./services/api.js";
 import { connectWebSocket, closeWebSocket } from "./services/ws.js";
+
 import { startGame, onGameUpdate, stopGame } from "./scripts/game.js";
 
 // CHAT
-import { onChatMessage, onChatHistory, onChatError } from "./scripts/chat.js";
+import { onChatMessage, onChatHistory, onChatError, resetChat } from "./scripts/chat.js";
+import { renderHud } from "./scripts/hud.js";
 
 export const router = Router();
 
-[lobbyState, waitingState/*, chatState, hudState*/].forEach(store =>
+// subscriptions ******************************
+
+[lobbyState].forEach(store =>
   store.subscribe(() => patchDOM(router))
 );
+
+export function patchWaiting() {
+  const target = document.getElementById('waiting-component');
+  if (target) patchDOM(router, target, Waiting());
+}
+
+waitingState.subscribe(patchWaiting);
+
+export function patchChat() {
+  const target = document.getElementById('chat-component');
+  if (target) patchDOM(router, target, Chat());
+}
+
+chatState.subscribe(patchChat);
+
+hudState.subscribe(renderHud);
+
+// ********************************************
 
 router.addRoute({
   path: "/lobby",
@@ -39,13 +64,6 @@ router.addRoute({
     if (!playerId) return false;
     return router.navigate(status === "room" ? "/" : "/waiting"); // navigates 2 times
   }
-  // async function guardLobby() {
-  //   const { playerId, status, room } = await fetchPlayerState();
-  //   if (!playerId) return false; // no session -> lobby is correct, let it render
-
-  //   if (status === "room" && room.state === "playing") return router.navigate("/");
-  //   return router.navigate("/waiting"); // still queued, or in a room that hasn't started
-  // }
 });
 
 router.addRoute({
@@ -54,20 +72,13 @@ router.addRoute({
     patchDOM(router);
     wireWaiting();
   },
-  component: () => App(Waiting()),
+  component: () => App(Waiting(), Chat({ hint: "Waiting for players. Say hi while you wait!" })),
   guard: async () => {
     const { playerId, status } = await fetchPlayerState();
     if (!playerId) return router.navigate("/lobby");
     if (status === "room") return router.navigate("/");
     return false;
   }
-  // async function guardWaiting() {
-  //   const { playerId, status, room } = await fetchPlayerState();
-  //   if (!playerId) return router.navigate("/lobby");
-
-  //   if (status === "room" && room.state === "playing") return router.navigate("/");
-  //   return false; // queued or room-not-playing -> waiting page is correct
-  // }
 });
 
 router.addRoute({
@@ -98,14 +109,6 @@ router.addRoute({
     if (status !== "room") return router.navigate("/waiting");
     return false;
   }
-  // async function guardGame() {
-  //   const { playerId, status, room } = await fetchPlayerState();
-  //   if (!playerId) return router.navigate("/lobby");
-
-  //   const isPlaying = status === "room" && room.state === "playing";
-  //   if (!isPlaying) return router.navigate("/waiting");
-  //   return false;
-  // }
 });
 
 router.addRoute({
@@ -123,6 +126,7 @@ router.init();
 function wireLobby() {
   stopGame();
   stopWaitingTimers();
+  resetChat();
 
   if (localStorage.getItem("bomberman:opponentsLeft")) {
     localStorage.removeItem("bomberman:opponentsLeft");
@@ -137,12 +141,19 @@ function wireLobby() {
 let tickTimer = null;
 
 function wireWaiting() {
+  // Start from a clean list; the socket immediately replies with the waiting
+  // room's history, if there is any.
+  resetChat();
+
   connectWebSocket(localStorage.getItem("bomberman:playerId"), {
     onQueueUpdate: (queuePosition, playerCount) => waitingState.setState({ playerCount }),
     onQueueTimer: (endsAt) => startTimerDisplay(endsAt, "Locking in players in"),
     onCountdown: (endsAt) => startTimerDisplay(endsAt, "Game starts in"),
     onTimerCancelled: () => { clearInterval(tickTimer); waitingState.setState({ secondsLeft: null }); },
     onGameUpdate: () => { stopWaitingTimers(); setTimeout(() => router.navigate("/"), 200); },
+    onChatMessage: (message) => onChatMessage(message),
+    onChatHistory: (messages) => onChatHistory(messages),
+    onChatError: (error) => onChatError(error),
     onError: (err) => console.error("WebSocket error", err),
   });
 }
