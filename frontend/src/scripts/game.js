@@ -127,6 +127,17 @@ function renderStaticCells(game) {
 }
 
 function renderPlayers(game, size) {
+  const currentPlayerIds = new Set(Object.keys(game.players));
+
+  // Remove tokens for players no longer in the game (left mid-match)
+  for (const [playerId, el] of playerEls) {
+    if (!currentPlayerIds.has(playerId)) {
+      el.remove();
+      playerEls.delete(playerId);
+      playerAnim.delete(playerId);
+    }
+  }
+
   Object.entries(game.players).forEach(([playerId, player], i) => {
     const el = ensurePlayerElement(playerId, player.position, size);
     el.classList.toggle(`player-${i}`, true);
