@@ -33,7 +33,8 @@ export default function Game() {
                 { class: "border-line" },
                 {},
                 createElement("div", { class: "map-game", id: "map-game" }, {}),
-                createElement("div", { class: "start-countdown", id: "start-countdown" }, {}, "Get ready...")
+                createElement("div", { class: "start-countdown", id: "start-countdown" }, {}, "Get ready..."),
+                createElement("div", { class: "game-result-overlay", id: "game-result-overlay", "aria-live": "assertive" }, {})
             ),
         ),
     );

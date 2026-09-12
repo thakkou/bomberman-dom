@@ -205,17 +205,19 @@ export function onGameUpdate(game, newRoomState, countdownEndsAt) {
   const me = game.players[myPlayerId];
 
   let message = "";
+  let resultMessage = "";
   if (game.winnerId) {
-    message = game.winnerId === myPlayerId ? "You win!" : "Game over — another player won.";
+    resultMessage = game.winnerId === myPlayerId ? "You win!" : "Game over — another player won.";
   } else if (me && !me.alive) {
     message = "You're out! Spectating the rest of the match.";
   }
 
-  hudState.setState({ players: game.players, myPlayerId, message });
+  hudState.setState({ players: game.players, myPlayerId, message, resultMessage });
 }
 
 export function startGame() {
   roomState = null;
+  hudState.setState({ players: {}, myPlayerId: null, message: "", resultMessage: "" });
   generateMapCubes();
 
   fitBoard();
